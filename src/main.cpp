@@ -38,6 +38,9 @@ VideoInterface* dummy;
 
 pugi::xml_document send_doc;
 
+//char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
+char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
+
 void InitializeSaveFile () {
 	//File saving fields
 	sliders_save_peg  = {  
@@ -165,7 +168,6 @@ void* finder_thread (void* arg) {
 
 void ServerMode() {
 	std::stringstream ss;
-	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
 
 	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
 			video_interface_save["depth_width"		], 
@@ -254,8 +256,8 @@ void TestStatic(char* rgb_directory, char* depth_directory) {
 }
 
 
+Mat small;
 void TestLive() {
-	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
 	//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
 
 	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
@@ -311,23 +313,25 @@ void TestLive() {
 		//img8c3.data = sensor->largeDepthCV->data;
 
 		/*
-			for (int x = 0; x < img8c3.size().width; x++) {
-			for (int y = 0; y < img8c3.size().height; y++) {
-			COMBO pixel;
-			pixel.int_var = sensor->largeDepthCV->at<unsigned short>(y,x);	
-			img8c3.at<Vec3b> (y,x)[0] = pixel.ch1ch2[0];
-			img8c3.at<Vec3b> (y,x)[1] = pixel.ch1ch2[1];
-			}
-			}
-			*/
-	
+		   for (int x = 0; x < img8c3.size().width; x++) {
+		   for (int y = 0; y < img8c3.size().height; y++) {
+		   COMBO pixel;
+		   pixel.int_var = sensor->largeDepthCV->at<unsigned short>(y,x);	
+		   img8c3.at<Vec3b> (y,x)[0] = pixel.ch1ch2[0];
+		   img8c3.at<Vec3b> (y,x)[1] = pixel.ch1ch2[1];
+		   }
+		   }
+		 */
+
 		//imshow("wat2", *sensor->largeDepthCV);
 		//encoder->Encode16Bit();
 
 		//imshow("wat", img8c3);
 		//imshow("Left", *sensor->rightIRCV);
 		//imshow("Right", *sensor->leftIRCV);
-		imshow("Color", *sensor->bgrmatCV);
+		resize(*sensor->bgrmatCV, small, Size(480,320));	
+		cvtColor(small, small, CV_BGR2GRAY);
+		imshow("Color", small);
 		//sensor->depthmatCV->flags = CV_8UC3;
 		//imshow("Depth", *sensor->largeDepthCV * 16);
 		//sensor->depthmatCV->flags = CV_16UC1;
