@@ -2,7 +2,7 @@
     "Application_Options": {
         "show_HSV": 0,
         "show_depth": 0,
-        "show_overlays": 0,
+        "show_overlays": 1,
         "show_rgb": 1,
         "show_sliders_boiler": 0,
         "show_sliders_peg": 0,
@@ -28,7 +28,7 @@
         "depth_framerate": 30,
         "depth_height": 480,
         "depth_width": 640,
-        "exposure": 30
+        "exposure": 90
     },
     "Sliders_Boiler": {
         "area_slider": 5000,

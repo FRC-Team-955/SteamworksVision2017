@@ -5,7 +5,7 @@
 
 currentdir=$PWD
 findmnt=`(until findmnt . ; do cd .. ; done) | tail -n 1`
-mountdir=`echo $findmnt | awk '{print $1}'`
+mountdir=`echo $findmnt | awk '{print $1}'`/
 devicedir=`echo $findmnt | awk '{print $2}' | sed -e "s/.*:\(.*\)/\1/g"`
 echo $devicedir
 echo $mountdir

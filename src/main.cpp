@@ -260,6 +260,9 @@ Mat small;
 void TestLive() {
 	//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
 
+	system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
+	system(("v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(video_interface_save["exposure"]) + " -d 2").c_str());
+
 	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
 			video_interface_save["depth_width"		], 
 			video_interface_save["depth_height"		],
@@ -308,20 +311,20 @@ void TestLive() {
 
 	while(true) {
 		sensor->GrabFrames();
-		//finder->ProcessFrame(); //TODO: Make this less self-contained!
-		//send_doc.save(std::cout);
+		finder->ProcessFrame(); //TODO: Make this less self-contained!
+		send_doc.save(std::cout);
 		//img8c3.data = sensor->largeDepthCV->data;
 
 		/*
-		   for (int x = 0; x < img8c3.size().width; x++) {
-		   for (int y = 0; y < img8c3.size().height; y++) {
-		   COMBO pixel;
-		   pixel.int_var = sensor->largeDepthCV->at<unsigned short>(y,x);	
-		   img8c3.at<Vec3b> (y,x)[0] = pixel.ch1ch2[0];
-		   img8c3.at<Vec3b> (y,x)[1] = pixel.ch1ch2[1];
-		   }
-		   }
-		 */
+			for (int x = 0; x < img8c3.size().width; x++) {
+			for (int y = 0; y < img8c3.size().height; y++) {
+			COMBO pixel;
+			pixel.int_var = sensor->largeDepthCV->at<unsigned short>(y,x);	
+			img8c3.at<Vec3b> (y,x)[0] = pixel.ch1ch2[0];
+			img8c3.at<Vec3b> (y,x)[1] = pixel.ch1ch2[1];
+			}
+			}
+			*/
 
 		//imshow("wat2", *sensor->largeDepthCV);
 		//encoder->Encode16Bit();
@@ -329,9 +332,11 @@ void TestLive() {
 		//imshow("wat", img8c3);
 		//imshow("Left", *sensor->rightIRCV);
 		//imshow("Right", *sensor->leftIRCV);
-		resize(*sensor->bgrmatCV, small, Size(480,320));	
-		cvtColor(small, small, CV_BGR2GRAY);
-		imshow("Color", small);
+
+		//resize(*sensor->bgrmatCV, small, Size(480,320));	
+		//cvtColor(small, small, CV_BGR2GRAY);
+		//imshow("Color", small);
+
 		//sensor->depthmatCV->flags = CV_8UC3;
 		//imshow("Depth", *sensor->largeDepthCV * 16);
 		//sensor->depthmatCV->flags = CV_16UC1;
