@@ -2,8 +2,6 @@
 #include <librealsense/rs.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-//#include <opencv2/core/cuda.hpp>
-//#include <opencv_cuda_hack/cudaarithm.hpp>
 
 //Written for this project
 #include <RealSense.hpp>
@@ -25,19 +23,31 @@ Realsense* sensor; Histogram* hist;
 Saving* save_file;
 Median* median_filter;
 
-bool ToleranceCheck (float input, float expect, float tolerance) {
+static bool ToleranceCheck (float input, float expect, float tolerance) {
 	return fabs(input-expect) <= tolerance;
+}
+
+//http://answers.opencv.org/question/74400/calculate-the-distance-pixel-between-the-two-edges-lines/ - Turns out it's a better way than maunally doing the pythag. Theorem!
+static float PointDistance (Point* a, Point* b) {
+	return norm(*b-*a);
 }
 
 struct stripe_object {
 	Rect ROI;
-	stripe_object *paired;
-	bool found_other = false;
-	bool was_found = false;
+	Point center;
 
-	void AssignPair (stripe_object* other) {
-		found_other = true;
+	float ScorePair (stripe_object* other) {
+		//float position_difference = PointDistance(&center, &other->center);
+		float position_difference_inv = (100.0 / abs(center.y - other->center.y)) + (1.0 / abs(center.x - other->center.x));
+		float area_difference_inv = 1.0 / fabs(other->ROI.area() - ROI.area()); 
+		if (position_difference_inv > 0) { //If the distance is 0, it's the same object and that's not okay
+			return position_difference_inv + area_difference_inv;
+			//return (1.0 / area_difference == 0 ? 1.0 : area_difference) * (1.0 / position_difference);
+		} else {
+			return 0; 
+		}
 	}
+
 };
 
 int main (int argc, char** argv) {
@@ -55,15 +65,14 @@ int main (int argc, char** argv) {
 		{"sat_slider_upper"	,	256	},
 		{"val_slider_lower"	,	256	},
 		{"val_slider_upper"	,	256	},
-//		{"open_slider"			,	5		},
-//		{"close_slider"		,	20		},
-//		{"thresh_slider"		,	256	},
-//		{"canny_slider" 		,	256	},
+		//		{"open_slider"			,	5		},
+		//		{"close_slider"		,	20		},
+		//		{"thresh_slider"		,	256	},
+		//		{"canny_slider" 		,	256	},
 		{"area_slider"			,	5000	}
 	};
 
-	std::unordered_map<string, int> sensor_save = {
-		{"depth_width"			,	480	}, 
+	std::unordered_map<string, int> sensor_save = { {"depth_width"			,	480	}, 
 		{"depth_height"		,	360	}, 
 		{"depth_framerate"	,	30		}, 
 		{"bgr_width"			,	1920	}, 
@@ -122,6 +131,9 @@ int main (int argc, char** argv) {
 
 	vector< vector <Point> > contours;
 
+	//TODO: Deallocate all of that dedodated wam
+	vector< stripe_object * > stripes;
+
 	while (true) {
 		sensor->GrabFrames();
 		if (application_options["show_ui"]) {
@@ -142,7 +154,7 @@ int main (int argc, char** argv) {
 
 		// Find viable contours
 		findContours(hsv_range_mask_filtered, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, Point(0,0));
-		filtered_contours.empty();
+		stripes.clear();
 		for (auto& contour : contours) {
 
 			Rect bounding_rectangle = boundingRect(contour);		
@@ -150,21 +162,47 @@ int main (int argc, char** argv) {
 			Point bounding_rectangle_center = Point(bounding_rectangle.width / 2, bounding_rectangle.height / 2) + bounding_rectangle.tl();
 
 			float rectangle_dim_ratio = (float)bounding_rectangle.width / (float)bounding_rectangle.height;	
-			
+
 			//Check if it fits contour criteria (Area, and ROI width to height ratio)
-			//	if ( contourArea(contour) >= sliders_save["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.1) ) {
 			if ( bounding_rectangle.area() >= sliders_save["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.1) ) {
-				rectangle(*sensor->bgrmatCV, bounding_rectangle, Scalar(0, 255, 128), 2);
-				filtered_contours.push_back(contour); //STORE THE AREA TOO
+				rectangle(*sensor->bgrmatCV, bounding_rectangle, Scalar(0, 255, 255), 2);
+
+				//Create a new stripe object
+				stripe_object* stripe = new stripe_object;
+				stripe->ROI = bounding_rectangle;
+				stripe->center = bounding_rectangle_center;
+				stripes.push_back(stripe); 
+
 			} else {
 				rectangle(*sensor->bgrmatCV, bounding_rectangle, Scalar(0, 0, 255), 2);
 			}
 		}
 
-		// Pair contours with others (Find closest by most similar Y value, area, and distance to adjacent)
+		// Find the best pair (Find closest by most similar Y value, area, and distance to adjacent)
+		float best_score = 0.0;
+		stripe_object* best_stripe = nullptr;
+		stripe_object* best_stripe_pair = nullptr;
+		if (stripes.size() > 1) {
+			for (auto& stripe : stripes) {
+				for (auto& candidate : stripes) {
+					if (candidate != stripe) {
+						float score = candidate->ScorePair(stripe);
+						if (score > best_score) {
+							best_stripe = stripe;	
+							best_stripe_pair = candidate;	
+							best_score = score;
+						}
+					}
+				}
+			}
+			if (best_stripe && best_stripe_pair) {
+				line(*sensor->bgrmatCV, best_stripe->center, best_stripe_pair->center, Scalar(0, 0, 255), 3, CV_AA); 
+				putText(*sensor->bgrmatCV, std::to_string(best_score), best_stripe_pair-> center, CV_FONT_HERSHEY_TRIPLEX, 5, Scalar(0, 0, 255)); 
+			}
+		}
 
 		// Find the most promising pair (Closest, most centered)
-		
+
 		imshow("COLOR", *sensor->bgrmatCV);
 
 		waitKey(10);
