@@ -6,7 +6,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0 FATAL_ERROR)
 # Revision1 project
 PROJECT(RS_Vision)
 
-# Configure OpenCV and Puxixml packages (They have cmake release files)
+# Configure OpenCV and Pugixml packages (They have cmake release files)
 FIND_PACKAGE(OpenCV REQUIRED)
 
 # Manually the librealsense libraries and headers

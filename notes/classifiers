@@ -1,0 +1,13 @@
+Shape:
+	Has at least two hard edges
+	An ROI box around the obeject will be >90% filled with white pixels
+		Method: Find countours -> Get ROIs -> Crop from ROI -> add up pixels -> divide by area of ROI (as float) -> check to see if the value is >90%
+	The ratio of width to height of the ROIs will be 2/5 (with a certain tolerance)
+
+Color:
+	Will be 1.0 on HSV, but 0 on the depth map. This is because the lasers reflected off of it come right back 100%
+		Method: HSV_Threshold * (1 - Depth) = Certainty that the space is occupied by reflective tape 
+	Infrared seems to also be reflected back by the tape more than anything else I could find. The problem is that there's no Infrared image aligned to color that I can use. Maybe there's a workaround; because this would mean I wouldn't even have to have the (annoying and blinding) green lights!
+
+Take a look here, maybe:
+https://github.com/IntelRealSense/librealsense/blob/master/doc/projection.md

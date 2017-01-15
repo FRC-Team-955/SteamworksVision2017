@@ -22,6 +22,7 @@ class Realsense
 		Mat *depthmatCV; 
 		Mat *registeredCV;
 		Mat *largeDepthCV;
+		//Mat *infraredCV;
 
 		void GrabFrames () ;
 

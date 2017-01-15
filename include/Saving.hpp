@@ -6,18 +6,17 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <unordered_map> //Faster lookup times
 
 using json = nlohmann::json;
 
-using namespace std;
-
 class Saving {
 	private:
-		map<string, map<string, int> *>* load_maps;
-		string directory;
+		std::unordered_map<std::string, std::unordered_map<std::string, int> *>* load_maps;
+		std::string directory;
 		json save_json;
 	public:
-		Saving (string directory, map<string, map<string, int> *>* load_maps);
+		Saving(std::string directory, std::unordered_map<std::string, std::unordered_map<std::string, int> *>* load_maps);
 
 		void SaveJSON ();
 

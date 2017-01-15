@@ -6,7 +6,7 @@ void Sliders::on_trackbar(int newVal, void * object) {
 	save_object->SaveJSON();
 };
 
-Sliders::Sliders(char* window_title, map<string, int> *sliders, Saving* save_object) {
+Sliders::Sliders(char* window_title, std::unordered_map<std::string, int> *sliders, Saving* save_object) {
 	this->window_title = window_title;
 	this->sliders = sliders;
 	this->save_object = save_object;

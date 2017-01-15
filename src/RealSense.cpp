@@ -10,6 +10,7 @@ void Realsense::GrabFrames () {
 
 		depthmatCV->data = (unsigned char*)dev->get_frame_data(rs::stream::depth);
 		rgbmatCV->data = (unsigned char*)dev->get_frame_data(rs::stream::rectified_color);
+		//infraredCV->data = (unsigned char*)dev->get_frame_data(rs::stream::infrared2);
 		cvtColor(*rgbmatCV, *bgrmatCV, CV_RGB2BGR);
 		largeDepthCV->data = (unsigned char*)dev->get_frame_data(rs::stream::depth_aligned_to_color);
 	} else {
@@ -23,6 +24,7 @@ Realsense::Realsense(int depth_width, int depth_height, int depth_framerate, int
 	registeredCV = new Mat (bgr_height, bgr_width, CV_8UC3); 
 	largeDepthCV = new Mat (bgr_height, bgr_width, CV_16UC1); 
 	depthmatCV = new Mat (depth_height, depth_width, CV_16UC1);
+	//infraredCV = new Mat (360, 480, CV_8UC1);
 
 	printf("There are %d connected RealSense devices.\n", ctx.get_device_count());
 
@@ -40,6 +42,7 @@ Realsense::Realsense(int depth_width, int depth_height, int depth_framerate, int
 	//@30FPS, depth at 480x360, color can be 320x240, 640x480, 1280x720, or 1920x1080
 	dev->enable_stream(rs::stream::depth, depth_width, depth_height, rs::format::z16, depth_framerate);
 	dev->enable_stream(rs::stream::color, bgr_width, bgr_height, rs::format::rgb8, bgr_framerate);
+	//dev->enable_stream(rs::stream::infrared2, 480, 360, rs::format::y8, bgr_framerate); //Change this line to include a save file option if you do end up using infrared
 
 	dev->start();
 

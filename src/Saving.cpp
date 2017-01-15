@@ -1,12 +1,16 @@
+/*
+ * This class was made to make transforming between types of serializers easy, by the way
+ */
+
 #include "Saving.hpp"
 
-Saving::Saving(string directory, map<string, map<string, int> *>* load_maps) {
+Saving::Saving(std::string directory, std::unordered_map<std::string, std::unordered_map<std::string, int> *>* load_maps) {
 	this->directory = directory;
 	this->load_maps = load_maps;
 }
 
 void Saving::SaveJSON () {
-	ofstream save_file (directory);
+	std::ofstream save_file (directory);
 	save_json.empty();
 	for (auto& load_map : *load_maps) {
 		for (auto& parameter : *load_map.second) {
@@ -19,9 +23,9 @@ void Saving::SaveJSON () {
 
 bool Saving::LoadJSON () {
 	save_json.empty();
-	ifstream load_file (directory);
+	std::ifstream load_file (directory);
 	if (load_file.good()) {
-		string json_string ((istreambuf_iterator<char>(load_file)), (istreambuf_iterator<char>()));
+		std::string json_string ((std::istreambuf_iterator<char>(load_file)), (std::istreambuf_iterator<char>()));
 		save_json = json::parse(json_string);
 		for (auto& load_map : *load_maps) {
 			for (auto& parameter : *load_map.second) {
