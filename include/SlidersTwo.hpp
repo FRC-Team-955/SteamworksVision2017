@@ -25,7 +25,9 @@ class Sliders {
 	public:
 		map<char*, int> save_file;
 
-		Sliders(bool showUI, char* window_title, map<string, int> *sliders, Saving* save_object);
+		Sliders(char* window_title, map<string, int> *sliders, Saving* save_object);
+
+		void InitializeSliders ();
 
 		void UpdateSliders (); //Write over the sliders - opencv's sliders' value inputs are not marked volatile, so we can't change them manually. 
 };

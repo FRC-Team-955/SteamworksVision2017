@@ -29,7 +29,7 @@ int main (int argc, char** argv) {
 	} 
 	//File saving properties
 	std::map<string, int> sliders_save  = {  //The default values are also used as the max values for the sliders before the file updates their values
-		{"hue_slider_lower"	,	179	}, //"Name", Default (AND Maximum, same number)
+		{"hue_slider_lower"	,	179	}, //"Name", Default (AND Maximum, same number in sliders)
 		{"hue_slider_upper"	,	179	},
 		{"sat_slider_lower"	,	256	},
 		{"sat_slider_upper"	,	256	},
@@ -50,23 +50,34 @@ int main (int argc, char** argv) {
 		{"bgr_height"			,	1080	}, 
 		{"bgr_framerate"		,	30		} 
 	}; 
+
+	std::map<string, int> application_options = {
+		{"show_ui"			,	1	} 
+	}; 
+
 	std::map<string, std::map<string, int>*> saved_fields = {
-		{"Sliders"		, &sliders_save		},
-		{"Sensor"		, &sensor_save	 		}  
+		{"Sliders"						, &sliders_save		},
+		{"Application_Options"		, &application_options		},
+		{"Sensor"						, &sensor_save	 		}  
 	};
 
 	//Object initialization
 	save_file = new Saving(argv[1], &saved_fields);
 
-	interface = new Sliders(true, argv[1], &sliders_save, save_file); //Run this line BEFORE loading from the save file.
+	interface = new Sliders(argv[1], &sliders_save, save_file); //Run this line BEFORE loading from the save file.
 
 	if (!save_file->LoadJSON()) {
 		save_file->SaveJSON(); //Create a new file with the defaults
 	}
 
+	//TODO: Better damn solution than this
+	if (application_options["show_ui"]) {
+		interface->InitializeSliders();
+	}
+
 	interface->UpdateSliders();
 
-	sensor = new Realsense( //TODO: Pass the entire sensor_save object into the class, and use it locally there
+	sensor = new Realsense( //TODO: Pass the entire sensor_save object into the class, and use it locally there (Maybe)
 			sensor_save["depth_width"		], 
 			sensor_save["depth_height"		],
 			sensor_save["depth_framerate"	],
@@ -93,7 +104,8 @@ int main (int argc, char** argv) {
 		imshow("COLOR", *sensor->bgrmatCV);
 		imshow("DEPTH", *sensor->largeDepthCV * 6);
 		cvtColor (*sensor->rgbmatCV, raw_hsv_color, COLOR_BGR2HSV); // Convert to HSV colorspace
-	inRange (raw_hsv_color,
+		//TODO: faster sliders_save indexing than using <map>
+		inRange (raw_hsv_color,
 				Scalar (sliders_save["hue_slider_lower"], sliders_save["sat_slider_lower"], sliders_save["val_slider_lower"]),
 				Scalar (sliders_save["hue_slider_upper"], sliders_save["sat_slider_upper"], sliders_save["val_slider_upper"]),
 				hsv_range_mask);

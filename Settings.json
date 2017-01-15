@@ -1,4 +1,7 @@
 {
+    "Application_Options": {
+        "show_ui": 1
+    },
     "General": {
         "default_value": 1300
     },
