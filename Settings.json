@@ -1,0 +1,40 @@
+{
+    "General": {
+        "default_value": 1300
+    },
+    "Histogram": {
+        "hist_max": 2000,
+        "hist_min": 200
+    },
+    "Median": {
+        "median_size": 10
+    },
+    "Sensor": {
+        "bgr_framerate": 30,
+        "bgr_height": 1080,
+        "bgr_width": 1920,
+        "depth_framerate": 30,
+        "depth_height": 360,
+        "depth_width": 480
+    },
+    "Sliders": {
+        "area_slider": 9999,
+        "canny_slider": 256,
+        "close_slider": 20,
+        "hue_slider_lower": 179,
+        "hue_slider_upper": 179,
+        "open_slider": 20,
+        "sat_slider_lower": 256,
+        "sat_slider_upper": 256,
+        "thresh_slider": 256,
+        "val_slider_lower": 256,
+        "val_slider_upper": 256
+    },
+    "Window": {
+        "show_HSV": 1,
+        "show_conv_kernel": 1,
+        "show_depth": 1,
+        "show_final": 1,
+        "show_morph": 1
+    }
+}
