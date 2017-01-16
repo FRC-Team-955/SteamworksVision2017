@@ -1,5 +1,5 @@
 /*
- * This class was made to make transforming between types of serializers easy, by the way
+ * This class was made to make toggling between types of serializers easy
  */
 
 #include "Saving.hpp"
@@ -40,6 +40,8 @@ bool Saving::LoadJSON () {
 	load_file.close();
 	return true;
 }
+
+
 
 Saving::~Saving () {
 	delete load_maps;

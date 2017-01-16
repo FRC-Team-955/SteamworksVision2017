@@ -6,22 +6,21 @@
 //Written for this project
 #include <RealSense.hpp>
 #include <SlidersTwo.hpp>
-#include <Histogram.hpp>
-#include <Median.hpp>
 #include <map>
 #include <Saving.hpp> 
 #include <vector> 
 #include <math.h>
 #include <stdlib.h>
 #include <unordered_map> //Faster lookup times, O(1) instead of O(log n) !
+#include <Histogram.hpp>
 
 using namespace cv;
 
 //Runtime objects
 Sliders* interface;
-Realsense* sensor; Histogram* hist;
+Realsense* sensor; 
+Histogram* hist;
 Saving* save_file;
-Median* median_filter;
 
 static bool ToleranceCheck (float input, float expect, float tolerance) {
 	return fabs(input-expect) <= tolerance;
@@ -81,7 +80,9 @@ int main (int argc, char** argv) {
 	}; 
 
 	std::unordered_map<string, int> imgproc_save = {
-		{"morph_open"		,	5			} 
+		{"morph_open"		,	5			},
+		{"histogram_min"	,	0			}, 
+		{"histogram_max"	,	500		} 
 	};
 
 	std::unordered_map<string, int> application_options = {
@@ -110,6 +111,8 @@ int main (int argc, char** argv) {
 	}
 
 	interface->UpdateSliders();
+
+	hist = new Histogram(imgproc_save["histogram_min"], imgproc_save["histogram_max"]);
 
 	sensor = new Realsense( //TODO: Pass the entire sensor_save object into the class, and use it locally there (Maybe)
 			sensor_save["depth_width"		], 
@@ -164,7 +167,7 @@ int main (int argc, char** argv) {
 			float rectangle_dim_ratio = (float)bounding_rectangle.width / (float)bounding_rectangle.height;	
 
 			//Check if it fits contour criteria (Area, and ROI width to height ratio)
-			if ( bounding_rectangle.area() >= sliders_save["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.1) ) {
+			if ( bounding_rectangle.area() >= sliders_save["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.3) ) {
 				rectangle(*sensor->bgrmatCV, bounding_rectangle, Scalar(0, 255, 255), 2);
 
 				//Create a new stripe object
@@ -199,7 +202,29 @@ int main (int argc, char** argv) {
 				line(*sensor->bgrmatCV, best_stripe->center, best_stripe_pair->center, Scalar(0, 0, 255), 3, CV_AA); 
 				putText(*sensor->bgrmatCV, std::to_string(best_score), best_stripe_pair-> center, CV_FONT_HERSHEY_TRIPLEX, 5, Scalar(0, 0, 255)); 
 			}
+
+			Rect left = best_stripe->ROI;
+			Rect right = best_stripe_pair->ROI;
+			if (left.x > right.x) {
+				std::swap(left, right);
+			}
+			Rect final_ROI = Rect(left.tl(), right.br());
+			rectangle(*sensor->bgrmatCV, final_ROI, Scalar(255, 0, 0), 2);  
+			unsigned short* pixelList = new unsigned short[final_ROI.area()];
+			unsigned short *moving_pixelList = pixelList ;
+			for (int x = final_ROI.tl().x; x < final_ROI.br().x; x++) {
+				for (int y = final_ROI.tl().y; y < final_ROI.br().y; y++) {
+					*moving_pixelList = sensor->largeDepthCV->at<unsigned short> (y, x);
+					moving_pixelList++;
+					//std::cout << x << "," << y << "," << sensor->largeDepthCV->at<unsigned short> (y, x) << std::endl;
+				}
+			}
+			hist->insert_histogram_data(pixelList, final_ROI.area());
+			std::cout << hist->take_percentile(10) << std::endl;
+			delete[] pixelList;
 		}
+
+		//Get a box that encapsulates both stripes
 
 		// Find the most promising pair (Closest, most centered)
 

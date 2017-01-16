@@ -28,6 +28,10 @@ class Realsense
 
 		Realsense(int depth_width, int depth_height, int depth_framerate, int bgr_width, int bgr_height, int bgr_framerate);
 
+		void SetColorExposure (int exposure);
+		
+		void SetDepthExposure (int exposure);
+
 		// Free up memory/stop processes
 		~Realsense();
 };

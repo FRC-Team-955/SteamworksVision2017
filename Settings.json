@@ -6,6 +6,8 @@
         "default_value": 1300
     },
     "Imgproc_const": {
+        "histogram_max": 1300,
+        "histogram_min": 500,
         "morph_open": 5
     },
     "Sensor": {
@@ -17,14 +19,14 @@
         "depth_width": 480
     },
     "Sliders": {
-        "area_slider": 201,
+        "area_slider": 1571,
         "canny_slider": 256,
         "close_slider": 20,
-        "hue_slider_lower": 23,
-        "hue_slider_upper": 87,
-        "sat_slider_lower": 84,
+        "hue_slider_lower": 30,
+        "hue_slider_upper": 61,
+        "sat_slider_lower": 121,
         "sat_slider_upper": 256,
-        "val_slider_lower": 200,
+        "val_slider_lower": 65,
         "val_slider_upper": 256
     }
 }

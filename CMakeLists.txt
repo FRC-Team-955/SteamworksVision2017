@@ -8,6 +8,7 @@ PROJECT(RS_Vision)
 
 # Configure OpenCV and Pugixml packages (They have cmake release files)
 FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(PugiXML REQUIRED)
 
 # Manually the librealsense libraries and headers
 FILE(GLOB Realsense_LIBS "/usr/local/lib/librealsense.so")
