@@ -48,12 +48,15 @@ Realsense::Realsense(int depth_width, int depth_height, int depth_framerate, int
 
 }
 
-Realsense::SetDepthExposure(int exposure) {
+void Realsense::SetDepthExposure(int exposure) {
+	dev->set_option(rs::option::r200_lr_exposure, exposure);
 }
 
 
-Realsense::SetDepthExposure(int exposure) {
+void Realsense::SetColorExposure(int exposure) {
+	dev->set_option(rs::option::color_exposure, exposure);
 }
+
 // Free up memory/stop processes
 // TODO: Clean up the device object! (dev)
 Realsense::~Realsense() {
