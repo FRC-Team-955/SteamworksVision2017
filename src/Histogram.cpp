@@ -39,11 +39,11 @@ unsigned short Histogram::take_percentile (int percentile) {
 		bin_number++;
 	}
 
-	//if (bin_number - 1 + min >= 0) {
-	return bin_number - 1 + min;
-	//} else {
-	//	return 0;
-	//}
+	if (bin_number > 0) {
+		return bin_number - 1 + min;
+	} else {
+		return 0;
+	}
 }
 
 Histogram::~Histogram() {

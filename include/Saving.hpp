@@ -1,7 +1,6 @@
 #ifndef SAVING_HPP
 #define SAVING_HPP
 #include "json.hpp"
-#include <opencv2/opencv.hpp>
 #include <iostream>
 #include <fstream>
 #include <iostream>
@@ -16,12 +15,21 @@ class Saving {
 		std::unordered_map<std::string, std::unordered_map<std::string, int> *>* load_maps;
 		std::string directory;
 		json save_json;
+		pugi::xml_document save_xml;
 	public:
 		Saving(std::string directory, std::unordered_map<std::string, std::unordered_map<std::string, int> *>* load_maps);
 
 		void SaveJSON ();
 
 		bool LoadJSON ();
+
+		void SaveXML ();
+
+		bool LoadXML ();
+
+		void StreamXML (std::ostream* out);
+
+		void UpdateXML ();
 
 		~Saving ();
 };

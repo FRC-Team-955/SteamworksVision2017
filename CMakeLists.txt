@@ -8,7 +8,10 @@ PROJECT(RS_Vision)
 
 # Configure OpenCV and Pugixml packages (They have cmake release files)
 FIND_PACKAGE(OpenCV REQUIRED)
-FIND_PACKAGE(PugiXML REQUIRED)
+#FIND_PACKAGE(PugiXML REQUIRED)
+
+find_path (PUGIXML_INCLUDE_DIR NAMES pugixml.hpp PATHS ${PUGIXML_HOME}/include)
+find_library (PUGIXML_LIBRARY NAMES pugixml PATHS ${PUGIXML_HOME}/lib)
 
 # Manually the librealsense libraries and headers
 FILE(GLOB Realsense_LIBS "/usr/local/lib/librealsense.so")
@@ -17,7 +20,8 @@ INCLUDE_DIRECTORIES("/usr/local/include/librealsense/")
 #INCLUDE_DIRECTORIES("/usr/include/pugixml.hpp")
 
 # Include the include directory for the project 
-INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(include ${PUGIXML_INCLUDE_DIR}/pugixml.hpp)
+MESSAGE(STATUS "Pugixml include dir: " ${PUGIXML_INCLUDE_DIR})
 
 # Compile source files
 FILE(GLOB SOURCES "src/*.cpp")
@@ -30,4 +34,4 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
 ADD_EXECUTABLE(RS_Vision ${SOURCES})
 
 # Link libraries into the executable
-TARGET_LINK_LIBRARIES(RS_Vision ${OpenCV_LIBS} ${Realsense_LIBS} ${Pugixml_LIBS} )
+TARGET_LINK_LIBRARIES(RS_Vision ${OpenCV_LIBS} ${Realsense_LIBS} ${PUGIXML_LIBRARY} )

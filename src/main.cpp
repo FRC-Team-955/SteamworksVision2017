@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <unordered_map> //Faster lookup times, O(1) instead of O(log n) !
 #include <Histogram.hpp>
+#include <pugixml.hpp>
 
 using namespace cv;
 
@@ -29,6 +30,10 @@ static bool ToleranceCheck (float input, float expect, float tolerance) {
 //http://answers.opencv.org/question/74400/calculate-the-distance-pixel-between-the-two-edges-lines/ - Turns out it's a better way than maunally doing the pythag. Theorem!
 static float PointDistance (Point* a, Point* b) {
 	return norm(*b-*a);
+}
+
+static Point MidPoint (Point* a, Point* b) {
+	return (*a+*b) / 2;
 }
 
 struct stripe_object {
@@ -71,22 +76,29 @@ int main (int argc, char** argv) {
 		{"area_slider"			,	5000	}
 	};
 
-	std::unordered_map<string, int> sensor_save = { {"depth_width"			,	480	}, 
+	std::unordered_map<string, int> sensor_save = { 
+		{"depth_width"			,	480	}, 
 		{"depth_height"		,	360	}, 
 		{"depth_framerate"	,	30		}, 
 		{"bgr_width"			,	1920	}, 
 		{"bgr_height"			,	1080	}, 
-		{"bgr_framerate"		,	30		} 
+		{"bgr_framerate"		,	30		}, 
+		{"exposure"				,	30		} 
 	}; 
 
 	std::unordered_map<string, int> imgproc_save = {
-		{"morph_open"		,	5			},
-		{"histogram_min"	,	0			}, 
-		{"histogram_max"	,	500		} 
+		{"morph_open"				,	5			},
+		{"histogram_min"			,	0			}, 
+		{"histogram_max"			,	500		},
+		{"histogram_percentile"	,	10			} 
 	};
 
 	std::unordered_map<string, int> application_options = {
-		{"show_ui"			,	1			} 
+		{"show_sliders"			,	1			}, 
+		{"show_rgb"					,	1			}, 
+		{"show_depth"				,	1			}, 
+		{"show_HSV"					,	1			}, 
+		{"show_overlays"			,	1			}, 
 	}; 
 
 	std::unordered_map<string, std::unordered_map<string, int>*> saved_fields = {
@@ -106,7 +118,7 @@ int main (int argc, char** argv) {
 	}
 
 	//TODO: Better damn solution than this
-	if (application_options["show_ui"]) {
+	if (application_options["show_sliders"]) {
 		interface->InitializeSliders();
 	}
 
@@ -122,6 +134,7 @@ int main (int argc, char** argv) {
 			sensor_save["bgr_height"		], 
 			sensor_save["bgr_framerate"	]
 			); 
+	//sensor->SetColorExposure(sensor_save["exposure"]);
 
 	//Create matrices/kernels
 	Mat raw_hsv_color; 
@@ -134,12 +147,14 @@ int main (int argc, char** argv) {
 
 	vector< vector <Point> > contours;
 
-	//TODO: Deallocate all of that dedodated wam
+	//TODO: Deallocate all of that dedodated wam (mem leak!)
 	vector< stripe_object * > stripes;
+
+	pugi::xml_document stream_doc; //For serialising to the RIO
 
 	while (true) {
 		sensor->GrabFrames();
-		if (application_options["show_ui"]) {
+		if (application_options["show_depth"]) {
 			imshow("DEPTH", *sensor->largeDepthCV * 6);
 		}
 
@@ -153,7 +168,10 @@ int main (int argc, char** argv) {
 		morphologyEx(hsv_range_mask, hsv_range_mask_filtered, MORPH_OPEN, morph_open_struct_element);
 
 
-		imshow("HSV_RANGE_SELECT", hsv_range_mask_filtered);
+		//TODO: Save file selections of outputs
+		if (application_options["show_HSV"]) {
+			imshow("HSV_RANGE_SELECT", hsv_range_mask_filtered);
+		}
 
 		// Find viable contours
 		findContours(hsv_range_mask_filtered, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, Point(0,0));
@@ -199,36 +217,50 @@ int main (int argc, char** argv) {
 				}
 			}
 			if (best_stripe && best_stripe_pair) {
-				line(*sensor->bgrmatCV, best_stripe->center, best_stripe_pair->center, Scalar(0, 0, 255), 3, CV_AA); 
-				putText(*sensor->bgrmatCV, std::to_string(best_score), best_stripe_pair-> center, CV_FONT_HERSHEY_TRIPLEX, 5, Scalar(0, 0, 255)); 
-			}
-
-			Rect left = best_stripe->ROI;
-			Rect right = best_stripe_pair->ROI;
-			if (left.x > right.x) {
-				std::swap(left, right);
-			}
-			Rect final_ROI = Rect(left.tl(), right.br());
-			rectangle(*sensor->bgrmatCV, final_ROI, Scalar(255, 0, 0), 2);  
-			unsigned short* pixelList = new unsigned short[final_ROI.area()];
-			unsigned short *moving_pixelList = pixelList ;
-			for (int x = final_ROI.tl().x; x < final_ROI.br().x; x++) {
-				for (int y = final_ROI.tl().y; y < final_ROI.br().y; y++) {
-					*moving_pixelList = sensor->largeDepthCV->at<unsigned short> (y, x);
-					moving_pixelList++;
-					//std::cout << x << "," << y << "," << sensor->largeDepthCV->at<unsigned short> (y, x) << std::endl;
+				Rect left = best_stripe->ROI;
+				Rect right = best_stripe_pair->ROI;
+				if (left.x > right.x) {
+					std::swap(left, right);
 				}
+				Rect final_ROI = Rect(left.tl(), right.br());
+
+				if (application_options["show_overlays"]) {
+					rectangle(*sensor->bgrmatCV, final_ROI, Scalar(255, 0, 0), 2);  
+					line(*sensor->bgrmatCV, best_stripe->center, best_stripe_pair->center, Scalar(0, 0, 255), 3, CV_AA); 
+					//putText(*sensor->bgrmatCV, std::to_string(best_score), best_stripe_pair-> center, CV_FONT_HERSHEY_TRIPLEX, 5, Scalar(0, 0, 255)); 
+				}
+
+				unsigned short* pixelList = new unsigned short[final_ROI.area()];
+				unsigned short *moving_pixelList = pixelList; //A pointer that gets changed, so we copy the start value
+				for (int x = final_ROI.tl().x; x < final_ROI.br().x; x++) {
+					for (int y = final_ROI.tl().y; y < final_ROI.br().y; y++) {
+						*moving_pixelList = sensor->largeDepthCV->at<unsigned short> (y, x);
+						moving_pixelList++;
+					}
+				}
+				hist->insert_histogram_data(pixelList, final_ROI.area());
+
+				//TODO: Move this to the save class instead
+				stream_doc.reset();
+				pugi::xml_node root_node = stream_doc.append_child("Root");
+				int distance_to_screen_edge = sensor_save["bgr_width"] / 2;
+				int percentile = hist->take_percentile(imgproc_save["histogram_percentile"]);
+				root_node.append_attribute("histogram_state") = percentile > 0; 
+				root_node.append_attribute("distance") = percentile; 
+				root_node.append_attribute("slope") = (float)(best_stripe->center.y - best_stripe_pair->center.y) / (float)(best_stripe->center.x - best_stripe_pair->center.x);
+				root_node.append_attribute("x_magnitude") = (float)(MidPoint(&best_stripe->center, &best_stripe_pair->center).x - distance_to_screen_edge) / (float)distance_to_screen_edge; 
+				stream_doc.save(std::cout); //TODO: Set to named pipe later
 			}
-			hist->insert_histogram_data(pixelList, final_ROI.area());
-			std::cout << hist->take_percentile(10) << std::endl;
-			delete[] pixelList;
 		}
 
 		//Get a box that encapsulates both stripes
 
 		// Find the most promising pair (Closest, most centered)
 
-		imshow("COLOR", *sensor->bgrmatCV);
+		//TODO: Make another mat to display on instead of writing over the sensor's mat
+		if (application_options["show_rgb"]) {
+			imshow("COLOR", *sensor->bgrmatCV);
+		}
 
 		waitKey(10);
 	}

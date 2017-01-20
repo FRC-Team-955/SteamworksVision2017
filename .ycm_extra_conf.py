@@ -4,19 +4,19 @@ import ycm_core
 flags = [
 ]
 
-#import glob
-#def FindCompilationDB (): 
-#  DB = glob.glob ('*/compile_commands.json')
-#  if len (DB) == 0:
-#    return ''
-#
-#  # return the first one we see
-#  path = os.getcwd() + '/' + DB[0]
-#  return os.path.dirname (path)
-#
-#compilation_database_folder = FindCompilationDB ()
+import glob
+def FindCompilationDB (): 
+  DB = glob.glob ('*/compile_commands.json')
+  if len (DB) == 0:
+    return ''
 
-compilation_database_folder = '/home/duncan/Projects/Robotics/RS_Vision/build'
+  # return the first one we see
+  path = os.getcwd() + '/' + DB[0]
+  return os.path.dirname (path)
+
+compilation_database_folder = FindCompilationDB ()
+
+#compilation_database_folder = '/home/duncan/Projects/Robotics/RS_Vision/build'
 
 if os.path.exists( compilation_database_folder ):
   database = ycm_core.CompilationDatabase( compilation_database_folder )
