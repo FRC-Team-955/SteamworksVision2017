@@ -175,6 +175,10 @@ int main (int argc, char** argv) {
 
 		// Find viable contours
 		findContours(hsv_range_mask_filtered, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, Point(0,0));
+		for (auto& stripe : stripes) {
+			delete[] stripe;
+		}
+
 		stripes.clear();
 		for (auto& contour : contours) {
 
@@ -243,13 +247,25 @@ int main (int argc, char** argv) {
 				//TODO: Move this to the save class instead
 				stream_doc.reset();
 				pugi::xml_node root_node = stream_doc.append_child("Root");
+
+				int depth = hist->take_percentile(imgproc_save["histogram_percentile"]);
+
 				int distance_to_screen_edge = sensor_save["bgr_width"] / 2;
-				int percentile = hist->take_percentile(imgproc_save["histogram_percentile"]);
-				root_node.append_attribute("histogram_state") = percentile > 0; 
-				root_node.append_attribute("distance") = percentile; 
+
+				int eight_and_quarter_inches_in_px = PointDistance(&best_stripe->center, &best_stripe_pair->center);
+				float px_per_inch = (float)eight_and_quarter_inches_in_px / 8.25; 
+
+				int magnitude_x_px = MidPoint(&best_stripe->center, &best_stripe_pair->center).x - distance_to_screen_edge;
+				float magnitude_x_inch = magnitude_x_px / px_per_inch;
+
+				root_node.append_attribute("histogram_state") = depth > 0; 
+				root_node.append_attribute("distance_to_target") = depth; 
+				root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
 				root_node.append_attribute("slope") = (float)(best_stripe->center.y - best_stripe_pair->center.y) / (float)(best_stripe->center.x - best_stripe_pair->center.x);
-				root_node.append_attribute("x_magnitude") = (float)(MidPoint(&best_stripe->center, &best_stripe_pair->center).x - distance_to_screen_edge) / (float)distance_to_screen_edge; 
+				root_node.append_attribute("x_magnitude_inch") = magnitude_x_inch; 
+				//root_node.append_attribute("x_magnitude") = (float)(MidPoint(&best_stripe->center, &best_stripe_pair->center).x - distance_to_screen_edge) / (float)distance_to_screen_edge; 
 				stream_doc.save(std::cout); //TODO: Set to named pipe later
+				delete[] pixelList;
 			}
 		}
 

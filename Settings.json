@@ -1,7 +1,7 @@
 {
     "Application_Options": {
         "show_HSV": 0,
-        "show_depth": 1,
+        "show_depth": 0,
         "show_overlays": 1,
         "show_rgb": 1,
         "show_sliders": 0
@@ -25,7 +25,7 @@
         "exposure": 30
     },
     "Sliders": {
-        "area_slider": 1571,
+        "area_slider": 483,
         "canny_slider": 256,
         "close_slider": 20,
         "hue_slider_lower": 30,
