@@ -6,9 +6,6 @@
         "show_rgb": 1,
         "show_sliders": 0
     },
-    "General": {
-        "default_value": 1300
-    },
     "Imgproc_const": {
         "histogram_max": 50000,
         "histogram_min": 500,
@@ -26,8 +23,6 @@
     },
     "Sliders": {
         "area_slider": 483,
-        "canny_slider": 256,
-        "close_slider": 20,
         "hue_slider_lower": 30,
         "hue_slider_upper": 61,
         "sat_slider_lower": 121,

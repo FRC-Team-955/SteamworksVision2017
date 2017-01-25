@@ -258,6 +258,7 @@ int main (int argc, char** argv) {
 				int magnitude_x_px = MidPoint(&best_stripe->center, &best_stripe_pair->center).x - distance_to_screen_edge;
 				float magnitude_x_inch = magnitude_x_px / px_per_inch;
 
+				//TODO: Time stamping!
 				root_node.append_attribute("histogram_state") = depth > 0; 
 				root_node.append_attribute("distance_to_target") = depth; 
 				root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
