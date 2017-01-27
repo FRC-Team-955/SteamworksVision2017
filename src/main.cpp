@@ -20,7 +20,9 @@ using namespace cv;
 //Runtime objects
 Sliders* interface;
 Realsense* sensor; 
-Histogram* hist;
+Histogram* hist_roi;
+Histogram* hist_inner_roi_left;
+Histogram* hist_inner_roi_right;
 Saving* save_file;
 
 static bool ToleranceCheck (float input, float expect, float tolerance) {
@@ -32,8 +34,8 @@ static float PointDistance (Point* a, Point* b) {
 	return norm(*b-*a);
 }
 
-static Point MidPoint (Point* a, Point* b) {
-	return (*a+*b) / 2;
+static Point MidPoint (Point a, Point b) {
+	return (a+b) / 2;
 }
 
 struct stripe_object {
@@ -120,7 +122,9 @@ int main (int argc, char** argv) {
 
 	interface->UpdateSliders();
 
-	hist = new Histogram(imgproc_save["histogram_min"], imgproc_save["histogram_max"]);
+	hist_roi = new Histogram(imgproc_save["histogram_min"], imgproc_save["histogram_max"]);
+	hist_inner_roi_left = new Histogram(imgproc_save["histogram_min"], imgproc_save["histogram_max"]);
+	hist_inner_roi_right = new Histogram(imgproc_save["histogram_min"], imgproc_save["histogram_max"]);
 
 	sensor = new Realsense( //TODO: Pass the entire sensor_save object into the class, and use it locally there (Maybe)
 			sensor_save["depth_width"		], 
@@ -221,7 +225,16 @@ int main (int argc, char** argv) {
 				if (left.x > right.x) {
 					std::swap(left, right);
 				}
-				Rect final_ROI = Rect(left.tl(), right.br());
+
+				Rect final_ROI = Rect(
+						Point(left.br().x, left.tl().y), 
+						Point(right.tl().x, right.br().y)); //Only get the inner area between the two strips because the strips themselves reflect the IR that allows for depth (See notes) 
+				Rect left_hist_portion_ROI = Rect(
+						final_ROI.tl(), 
+						Point(final_ROI.tl().x + (final_ROI.width / 3), final_ROI.br().y)); //Get the left 1/3 of the ROI for use in slope calculations
+				Rect right_hist_portion_ROI = Rect(
+						Point(final_ROI.tl().x + (2 * final_ROI.width / 3), final_ROI.tl().y), //Get the right 1/3 of the ROI for use in slope calculations
+						final_ROI.br());
 
 				if (application_options["show_overlays"]) {
 					rectangle(*sensor->bgrmatCV, final_ROI, Scalar(255, 0, 0), 2);  
@@ -229,6 +242,10 @@ int main (int argc, char** argv) {
 					//putText(*sensor->bgrmatCV, std::to_string(best_score), best_stripe_pair-> center, CV_FONT_HERSHEY_TRIPLEX, 5, Scalar(0, 0, 255)); 
 				}
 
+				rectangle(*sensor->bgrmatCV, left_hist_portion_ROI, Scalar(255, 0, 255), 2);  
+				rectangle(*sensor->bgrmatCV, right_hist_portion_ROI, Scalar(255, 0, 255), 2);  
+
+				//Prepare the pixel lists for the histogram classes
 				unsigned short* pixelList = new unsigned short[final_ROI.area()];
 				unsigned short *moving_pixelList = pixelList; //A pointer that gets changed, so we copy the start value
 				for (int x = final_ROI.tl().x; x < final_ROI.br().x; x++) {
@@ -237,31 +254,64 @@ int main (int argc, char** argv) {
 						moving_pixelList++;
 					}
 				}
-				hist->insert_histogram_data(pixelList, final_ROI.area());
+				hist_roi->insert_histogram_data(pixelList, final_ROI.area());
+
+				//Prepare the pixel lists for the histogram classes
+				unsigned short* pixelList_left_ROI = new unsigned short[final_ROI.area()];
+				unsigned short *moving_pixelList_left_ROI = pixelList_left_ROI; //A pointer that gets changed, so we copy the start value
+				for (int x = final_ROI.tl().x; x < final_ROI.br().x; x++) {
+					for (int y = final_ROI.tl().y; y < final_ROI.br().y; y++) {
+						*moving_pixelList_left_ROI = sensor->largeDepthCV->at<unsigned short> (y, x);
+						moving_pixelList_left_ROI++;
+					}
+				}
+				hist_inner_roi_left->insert_histogram_data(pixelList_left_ROI, final_ROI.area());
+
+				//Prepare the pixel lists for the histogram classes
+				unsigned short* pixelList_right_ROI = new unsigned short[final_ROI.area()];
+				unsigned short *moving_pixelList_right_ROI = pixelList_right_ROI; //A pointer that gets changed, so we copy the start value
+				for (int x = final_ROI.tl().x; x < final_ROI.br().x; x++) {
+					for (int y = final_ROI.tl().y; y < final_ROI.br().y; y++) {
+						*moving_pixelList_right_ROI = sensor->largeDepthCV->at<unsigned short> (y, x);
+						moving_pixelList_right_ROI++;
+					}
+				}
+				hist_inner_roi_right->insert_histogram_data(pixelList_right_ROI, final_ROI.area());
 
 				//TODO: Move this to the save class instead
 				stream_doc.reset();
 				pugi::xml_node root_node = stream_doc.append_child("Root");
 
-				int depth = hist->take_percentile(imgproc_save["histogram_percentile"]);
+				int depth = hist_roi->take_percentile(imgproc_save["histogram_percentile"]);
+
+				int depth_left_ROI = hist_inner_roi_left->take_percentile(imgproc_save["histogram_percentile"]);
+				int depth_right_ROI = hist_inner_roi_right->take_percentile(imgproc_save["histogram_percentile"]);
+
+				int x_center_left_ROI = MidPoint(left_hist_portion_ROI.tl(), left_hist_portion_ROI.br()).x;
+				int x_center_right_ROI = MidPoint(right_hist_portion_ROI.tl(), right_hist_portion_ROI.br()).x;
+
+				float depth_x_slope = (float)(depth_right_ROI - depth_left_ROI) / (float)(x_center_right_ROI - x_center_left_ROI); 
 
 				int distance_to_screen_edge = sensor_save["bgr_width"] / 2;
 
 				int eight_and_quarter_inches_in_px = PointDistance(&best_stripe->center, &best_stripe_pair->center);
 				float px_per_inch = (float)eight_and_quarter_inches_in_px / 8.25; 
 
-				int magnitude_x_px = MidPoint(&best_stripe->center, &best_stripe_pair->center).x - distance_to_screen_edge;
+				int magnitude_x_px = MidPoint(best_stripe->center, best_stripe_pair->center).x - distance_to_screen_edge;
 				float magnitude_x_inch = magnitude_x_px / px_per_inch;
 
 				//TODO: Time stamping!
-				root_node.append_attribute("histogram_state") = depth > 0; 
-				root_node.append_attribute("distance_to_target") = depth; 
-				root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
-				root_node.append_attribute("slope") = (float)(best_stripe->center.y - best_stripe_pair->center.y) / (float)(best_stripe->center.x - best_stripe_pair->center.x);
-				root_node.append_attribute("x_magnitude_inch") = magnitude_x_inch; 
-				//root_node.append_attribute("x_magnitude") = (float)(MidPoint(&best_stripe->center, &best_stripe_pair->center).x - distance_to_screen_edge) / (float)distance_to_screen_edge; 
-				stream_doc.save(std::cout); //TODO: Set to named pipe later
+				if (depth > 0) {
+					root_node.append_attribute("distance_to_target") = depth; 
+					root_node.append_attribute("slope_depth") = depth_x_slope;
+					root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
+					root_node.append_attribute("slope_height") = (float)(best_stripe->center.y - best_stripe_pair->center.y) / (float)(best_stripe->center.x - best_stripe_pair->center.x);
+					root_node.append_attribute("x_magnitude_inch") = magnitude_x_inch; 
+					stream_doc.save(std::cout); //TODO: Set to named pipe later
+				}
 				delete[] pixelList;
+				delete[] pixelList_left_ROI;
+				delete[] pixelList_right_ROI;
 			}
 		}
 

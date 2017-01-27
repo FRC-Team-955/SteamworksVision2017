@@ -4,7 +4,7 @@
         "show_depth": 0,
         "show_overlays": 1,
         "show_rgb": 1,
-        "show_sliders": 0
+        "show_sliders": 1
     },
     "Imgproc_const": {
         "histogram_max": 50000,
@@ -22,7 +22,7 @@
         "exposure": 30
     },
     "Sliders": {
-        "area_slider": 483,
+        "area_slider": 859,
         "hue_slider_lower": 30,
         "hue_slider_upper": 61,
         "sat_slider_lower": 121,
