@@ -41,7 +41,7 @@ struct stripe_object {
 	Point center;
 
 	float ScorePair (stripe_object* other) {
-		//float position_difference = PointDistance(&center, &other->center);
+		//TODO: NO HARDCODED BIAS
 		float position_difference_inv = (100.0 / abs(center.y - other->center.y)) + (1.0 / abs(center.x - other->center.x));
 		float area_difference_inv = 1.0 / fabs(other->ROI.area() - ROI.area()); 
 		if (position_difference_inv > 0) { //If the distance is 0, it's the same object and that's not okay
@@ -69,10 +69,6 @@ int main (int argc, char** argv) {
 		{"sat_slider_upper"	,	256	},
 		{"val_slider_lower"	,	256	},
 		{"val_slider_upper"	,	256	},
-		//		{"open_slider"			,	5		},
-		//		{"close_slider"		,	20		},
-		//		{"thresh_slider"		,	256	},
-		//		{"canny_slider" 		,	256	},
 		{"area_slider"			,	5000	}
 	};
 
@@ -159,7 +155,6 @@ int main (int argc, char** argv) {
 		}
 
 		cvtColor (*sensor->rgbmatCV, raw_hsv_color, COLOR_BGR2HSV); // Convert to HSV colorspace
-		//TODO: faster sliders_save indexing than using <map>
 		//TODO: Implement depth-hsv combination select. See notes/classification for more detail
 		inRange (raw_hsv_color,
 				Scalar (sliders_save["hue_slider_lower"], sliders_save["sat_slider_lower"], sliders_save["val_slider_lower"]),
