@@ -8,8 +8,8 @@ If you're interested in running it, you'll need the following dependencies:
   - Also available on the AUR: [https://aur.archlinux.org/packages/librealsense/] () 
 - Pugixml (For serialization of data)
 - GNU Netcat (For network communication)
-- (_Coming soon_) v4l-utils (Changing camera properties, such as exposure)
+- v4l-utils (Changing camera properties, such as exposure)
 
-This should run on both desktop linux installations, and the Nvidia Jetson TK1 (At least when it's finished)
+This should run on both desktop linux installations, and the Nvidia Jetson TK1, see [http://www.jetsonhacks.com/2016/06/20/intel-realsense-camera-installation-nvidia-jetson-tk1/] () for info on how to get the tegra to work with an R200. You'll need the R21.3 version of NVIDIA's software for this to work; [https://developer.nvidia.com/linux-tegra-r213] ()
 
 Contact duncan.freeman1@gmail.com if you have questions. Thank you!
