@@ -10,15 +10,16 @@ set shortmess=aoO
 badd +16 src/main.cpp
 badd +2 src/PegFinder.cpp
 badd +89 include/PegFinder.hpp
-badd +64 src/RealSense.cpp
-badd +0 include/RealSense.hpp
+badd +1 src/RealSense.cpp
+badd +1 include/RealSense.hpp
 badd +1 src/Saving.cpp
 badd +5 include/Saving.hpp
 badd +1 src/SlidersTwo.cpp
-badd +0 include/SlidersTwo.hpp
+badd +1 include/SlidersTwo.hpp
 badd +1 src/Networking.cpp
-badd +0 CMakeLists.txt
-badd +0 include/Networking.hpp
+badd +1 CMakeLists.txt
+badd +7 include/Networking.hpp
+badd +385 ~/Tegra.h
 argglobal
 silent! argdel *
 argadd src/main.cpp
@@ -27,31 +28,13 @@ set splitbelow splitright
 wincmd _ | wincmd |
 vsplit
 1wincmd h
-wincmd _ | wincmd |
-split
-1wincmd k
-wincmd w
 wincmd w
 set nosplitbelow
 set nosplitright
 wincmd t
 set winheight=1 winwidth=1
-exe '1resize ' . ((&lines * 3 + 30) / 61)
 exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
-exe '2resize ' . ((&lines * 54 + 30) / 61)
-exe 'vert 2resize ' . ((&columns * 101 + 101) / 202)
-exe 'vert 3resize ' . ((&columns * 100 + 101) / 202)
-argglobal
-enew
-setlocal fdm=manual
-setlocal fde=0
-setlocal fmr={{{,}}}
-setlocal fdi=#
-setlocal fdl=0
-setlocal fml=1
-setlocal fdn=20
-setlocal fen
-wincmd w
+exe 'vert 2resize ' . ((&columns * 100 + 101) / 202)
 argglobal
 setlocal fdm=manual
 setlocal fde=0
@@ -62,7 +45,7 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-let s:l = 32 - ((24 * winheight(0) + 27) / 54)
+let s:l = 32 - ((26 * winheight(0) + 29) / 58)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
@@ -87,11 +70,8 @@ normal! zt
 11
 normal! 018|
 wincmd w
-exe '1resize ' . ((&lines * 3 + 30) / 61)
 exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
-exe '2resize ' . ((&lines * 54 + 30) / 61)
-exe 'vert 2resize ' . ((&columns * 101 + 101) / 202)
-exe 'vert 3resize ' . ((&columns * 100 + 101) / 202)
+exe 'vert 2resize ' . ((&columns * 100 + 101) / 202)
 tabedit src/main.cpp
 set splitbelow splitright
 set nosplitbelow
@@ -108,61 +88,12 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-let s:l = 15 - ((14 * winheight(0) + 29) / 58)
+let s:l = 22 - ((21 * winheight(0) + 29) / 58)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-15
-normal! 066|
-tabedit src/Networking.cpp
-set splitbelow splitright
-wincmd _ | wincmd |
-vsplit
-1wincmd h
-wincmd w
-set nosplitbelow
-set nosplitright
-wincmd t
-set winheight=1 winwidth=1
-exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
-exe 'vert 2resize ' . ((&columns * 100 + 101) / 202)
-argglobal
-setlocal fdm=manual
-setlocal fde=0
-setlocal fmr={{{,}}}
-setlocal fdi=#
-setlocal fdl=0
-setlocal fml=1
-setlocal fdn=20
-setlocal fen
-silent! normal! zE
-let s:l = 2 - ((1 * winheight(0) + 29) / 58)
-if s:l < 1 | let s:l = 1 | endif
-exe s:l
-normal! zt
-2
+22
 normal! 0
-wincmd w
-argglobal
-edit include/Networking.hpp
-setlocal fdm=manual
-setlocal fde=0
-setlocal fmr={{{,}}}
-setlocal fdi=#
-setlocal fdl=0
-setlocal fml=1
-setlocal fdn=20
-setlocal fen
-silent! normal! zE
-let s:l = 9 - ((8 * winheight(0) + 29) / 58)
-if s:l < 1 | let s:l = 1 | endif
-exe s:l
-normal! zt
-9
-normal! 07|
-wincmd w
-exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
-exe 'vert 2resize ' . ((&columns * 100 + 101) / 202)
 tabedit CMakeLists.txt
 set splitbelow splitright
 set nosplitbelow
@@ -256,7 +187,56 @@ exe s:l
 normal! zt
 222
 normal! 0
-tabnext 3
+tabedit src/Networking.cpp
+set splitbelow splitright
+wincmd _ | wincmd |
+vsplit
+1wincmd h
+wincmd w
+set nosplitbelow
+set nosplitright
+wincmd t
+set winheight=1 winwidth=1
+exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
+exe 'vert 2resize ' . ((&columns * 100 + 101) / 202)
+argglobal
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let s:l = 30 - ((29 * winheight(0) + 29) / 58)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+30
+normal! 04|
+wincmd w
+argglobal
+edit include/Networking.hpp
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let s:l = 24 - ((23 * winheight(0) + 29) / 58)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+24
+normal! 0
+wincmd w
+exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
+exe 'vert 2resize ' . ((&columns * 100 + 101) / 202)
+tabnext 2
 if exists('s:wipebuf') && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf
 endif
