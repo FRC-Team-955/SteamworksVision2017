@@ -18,7 +18,7 @@ void Realsense::GrabFrames () {
 	}
 }
 
-Realsense::Realsense(int depth_width, int depth_height, int depth_framerate, int bgr_width, int bgr_height, int bgr_framerate) {
+Realsense::Realsense(int depth_width, int depth_height, int depth_framerate, int bgr_width, int bgr_height, int bgr_framerate, char* serial) {
 	bgrmatCV = new Mat (bgr_height, bgr_width, CV_8UC3);
 	rgbmatCV = new Mat (bgr_height, bgr_width, CV_8UC3);
 	registeredCV = new Mat (bgr_height, bgr_width, CV_8UC3); 
@@ -26,12 +26,10 @@ Realsense::Realsense(int depth_width, int depth_height, int depth_framerate, int
 	depthmatCV = new Mat (depth_height, depth_width, CV_16UC1);
 	//infraredCV = new Mat (360, 480, CV_8UC1);
 
-	printf("There are %d connected RealSense devices.\n", ctx.get_device_count());
-
-	if(ctx.get_device_count() == 0)
+	if(!GetDeviceBySerial(serial)) {
+		std::cerr << "Camera with serial number " << serial << " not found. Double check?" << std::endl;
 		exit(-1);
-
-	dev = ctx.get_device(0);
+	}
 	printf("\nUsing device 0, an %s\n", dev->get_name());
 	printf("    Serial number: %s\n", dev->get_serial());
 	printf("    Firmware version: %s\n", dev->get_firmware_version());
@@ -60,4 +58,15 @@ void Realsense::SetColorExposure(int exposure) {
 // Free up memory/stop processes
 // TODO: Clean up the device object! (dev)
 Realsense::~Realsense() {
+}
+
+bool Realsense::GetDeviceBySerial(char* serial) {
+	for (int dev_idx = 0; dev_idx < ctx.get_device_count(); dev_idx++) {
+		rs::device* current_dev = ctx.get_device(dev_idx);
+		if (strcmp(current_dev->get_serial(), serial) == 0) {
+			dev = current_dev; 
+			return true;
+		}
+	}
+	return false;
 }

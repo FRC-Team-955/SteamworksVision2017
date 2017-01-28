@@ -7,79 +7,40 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +59 src/Saving.cpp
-badd +10 include/Saving.hpp
 badd +16 src/main.cpp
-badd +20 src/Histogram.cpp
-badd +27 include/Histogram.hpp
+badd +2 src/PegFinder.cpp
+badd +89 include/PegFinder.hpp
+badd +64 src/RealSense.cpp
+badd +0 include/RealSense.hpp
+badd +1 src/Saving.cpp
+badd +5 include/Saving.hpp
+badd +1 src/SlidersTwo.cpp
+badd +0 include/SlidersTwo.hpp
+badd +1 src/Networking.cpp
+badd +0 CMakeLists.txt
+badd +0 include/Networking.hpp
 argglobal
 silent! argdel *
-argadd src/Saving.cpp
-edit src/Histogram.cpp
+argadd src/main.cpp
+edit src/RealSense.cpp
 set splitbelow splitright
 wincmd _ | wincmd |
 vsplit
 1wincmd h
-wincmd w
-set nosplitbelow
-set nosplitright
-wincmd t
-set winheight=1 winwidth=1
-exe 'vert 1resize ' . ((&columns * 102 + 102) / 204)
-exe 'vert 2resize ' . ((&columns * 101 + 102) / 204)
-argglobal
-setlocal fdm=manual
-setlocal fde=0
-setlocal fmr={{{,}}}
-setlocal fdi=#
-setlocal fdl=0
-setlocal fml=1
-setlocal fdn=20
-setlocal fen
-silent! normal! zE
-let s:l = 42 - ((41 * winheight(0) + 29) / 59)
-if s:l < 1 | let s:l = 1 | endif
-exe s:l
-normal! zt
-42
-normal! 020|
-wincmd w
-argglobal
-edit include/Histogram.hpp
-setlocal fdm=manual
-setlocal fde=0
-setlocal fmr={{{,}}}
-setlocal fdi=#
-setlocal fdl=0
-setlocal fml=1
-setlocal fdn=20
-setlocal fen
-silent! normal! zE
-let s:l = 1 - ((0 * winheight(0) + 29) / 59)
-if s:l < 1 | let s:l = 1 | endif
-exe s:l
-normal! zt
-1
-normal! 0
-wincmd w
-exe 'vert 1resize ' . ((&columns * 102 + 102) / 204)
-exe 'vert 2resize ' . ((&columns * 101 + 102) / 204)
-tabedit src/main.cpp
-set splitbelow splitright
 wincmd _ | wincmd |
 split
-wincmd _ | wincmd |
-split
-2wincmd k
+1wincmd k
 wincmd w
 wincmd w
 set nosplitbelow
 set nosplitright
 wincmd t
 set winheight=1 winwidth=1
-exe '1resize ' . ((&lines * 3 + 31) / 62)
-exe '2resize ' . ((&lines * 27 + 31) / 62)
-exe '3resize ' . ((&lines * 27 + 31) / 62)
+exe '1resize ' . ((&lines * 3 + 30) / 61)
+exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
+exe '2resize ' . ((&lines * 54 + 30) / 61)
+exe 'vert 2resize ' . ((&columns * 101 + 101) / 202)
+exe 'vert 3resize ' . ((&columns * 100 + 101) / 202)
 argglobal
 enew
 setlocal fdm=manual
@@ -101,15 +62,15 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-let s:l = 262 - ((20 * winheight(0) + 13) / 27)
+let s:l = 32 - ((24 * winheight(0) + 27) / 54)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-262
-normal! 010|
+32
+normal! 04|
 wincmd w
 argglobal
-edit src/main.cpp
+edit include/RealSense.hpp
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -119,18 +80,183 @@ setlocal fml=1
 setlocal fdn=20
 setlocal fen
 silent! normal! zE
-let s:l = 230 - ((14 * winheight(0) + 13) / 27)
+let s:l = 11 - ((10 * winheight(0) + 29) / 58)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-230
-normal! 015|
+11
+normal! 018|
 wincmd w
-2wincmd w
-exe '1resize ' . ((&lines * 3 + 31) / 62)
-exe '2resize ' . ((&lines * 27 + 31) / 62)
-exe '3resize ' . ((&lines * 27 + 31) / 62)
-tabnext 2
+exe '1resize ' . ((&lines * 3 + 30) / 61)
+exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
+exe '2resize ' . ((&lines * 54 + 30) / 61)
+exe 'vert 2resize ' . ((&columns * 101 + 101) / 202)
+exe 'vert 3resize ' . ((&columns * 100 + 101) / 202)
+tabedit src/main.cpp
+set splitbelow splitright
+set nosplitbelow
+set nosplitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let s:l = 15 - ((14 * winheight(0) + 29) / 58)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+15
+normal! 066|
+tabedit src/Networking.cpp
+set splitbelow splitright
+wincmd _ | wincmd |
+vsplit
+1wincmd h
+wincmd w
+set nosplitbelow
+set nosplitright
+wincmd t
+set winheight=1 winwidth=1
+exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
+exe 'vert 2resize ' . ((&columns * 100 + 101) / 202)
+argglobal
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let s:l = 2 - ((1 * winheight(0) + 29) / 58)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+2
+normal! 0
+wincmd w
+argglobal
+edit include/Networking.hpp
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let s:l = 9 - ((8 * winheight(0) + 29) / 58)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+9
+normal! 07|
+wincmd w
+exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
+exe 'vert 2resize ' . ((&columns * 100 + 101) / 202)
+tabedit CMakeLists.txt
+set splitbelow splitright
+set nosplitbelow
+set nosplitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let s:l = 14 - ((10 * winheight(0) + 29) / 58)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+14
+normal! 088|
+tabedit src/SlidersTwo.cpp
+set splitbelow splitright
+wincmd _ | wincmd |
+vsplit
+1wincmd h
+wincmd w
+set nosplitbelow
+set nosplitright
+wincmd t
+set winheight=1 winwidth=1
+exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
+exe 'vert 2resize ' . ((&columns * 100 + 101) / 202)
+argglobal
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let s:l = 1 - ((0 * winheight(0) + 29) / 58)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+1
+normal! 025|
+wincmd w
+argglobal
+edit include/SlidersTwo.hpp
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let s:l = 28 - ((27 * winheight(0) + 29) / 58)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+28
+normal! 081|
+wincmd w
+exe 'vert 1resize ' . ((&columns * 101 + 101) / 202)
+exe 'vert 2resize ' . ((&columns * 100 + 101) / 202)
+tabedit src/PegFinder.cpp
+set splitbelow splitright
+set nosplitbelow
+set nosplitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let s:l = 222 - ((20 * winheight(0) + 29) / 58)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+222
+normal! 0
+tabnext 3
 if exists('s:wipebuf') && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf
 endif

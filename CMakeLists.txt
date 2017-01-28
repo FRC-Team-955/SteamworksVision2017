@@ -8,7 +8,11 @@ PROJECT(RS_Vision)
 
 # Configure OpenCV and Pugixml packages (They have cmake release files)
 FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(Threads REQUIRED)
 #FIND_PACKAGE(PugiXML REQUIRED)
+
+# Add the -lpthread flag instead of just the libs (Usefile for nvim), only on CMAKE 3.0+
+#set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_path (PUGIXML_INCLUDE_DIR NAMES pugixml.hpp PATHS ${PUGIXML_HOME}/include)
 find_library (PUGIXML_LIBRARY NAMES pugixml PATHS ${PUGIXML_HOME}/lib)
@@ -34,4 +38,4 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
 ADD_EXECUTABLE(RS_Vision ${SOURCES})
 
 # Link libraries into the executable
-TARGET_LINK_LIBRARIES(RS_Vision ${OpenCV_LIBS} ${Realsense_LIBS} ${PUGIXML_LIBRARY} )
+TARGET_LINK_LIBRARIES(RS_Vision ${OpenCV_LIBS} ${Realsense_LIBS} ${PUGIXML_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
