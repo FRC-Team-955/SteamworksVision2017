@@ -1,29 +1,23 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <RealSense.hpp>
-#include <SlidersTwo.hpp>
-#include <map>
-#include <Saving.hpp> 
-#include <vector> 
 #include <math.h>
 #include <stdlib.h>
 #include <unordered_map> //Faster lookup times, O(1) instead of O(log n) !
 #include <Histogram.hpp>
-#include <pugixml.hpp>
 #include <ostream>
+#include <RealSense.hpp>
+#include <pugixml.hpp>
 
 using namespace cv;
 
 class PegFinder {
 	private:
 		//Runtime objects
-		Sliders* interface;
 		Realsense* sensor; 
 		Histogram* hist_roi;
 		Histogram* hist_inner_roi_left;
 		Histogram* hist_inner_roi_right;
-		Saving* save_file;
-		ostream* output_ss;
+		std::ostream* output_ss;
 
 		//TODO: Move these functions to their own header 
 		static bool ToleranceCheck (float input, float expect, float tolerance) {
@@ -57,17 +51,6 @@ class PegFinder {
 
 		};
 
-		//Save file handles
-		std::unordered_map<string, int> sliders_save; 
-
-		std::unordered_map<string, int> sensor_save;
-
-		std::unordered_map<string, int> imgproc_save;
-
-		std::unordered_map<string, int> application_options;
-
-		std::unordered_map<string, std::unordered_map<string, int>*> saved_fields;
-
 		//Create matrices/kernels
 		Mat raw_hsv_color; 
 
@@ -77,16 +60,22 @@ class PegFinder {
 
 		Mat hsv_range_mask_filtered; 
 
-		vector< vector <Point> > contours;
+		std::vector< std::vector <Point> > contours;
 
 		//TODO: Deallocate all of that dedodated wam (mem leak!)
-		vector< stripe_object * > stripes;
+		std::vector< stripe_object * > stripes;
 
 		pugi::xml_document stream_doc; //For serialising to the RIO
 
+		//FIND A BETTER WAY TO DO THIS
+		std::unordered_map<std::string, int> *sliders_save			;	
+		std::unordered_map<std::string, int> *sliders_limits		;	
+		std::unordered_map<std::string, int> *imgproc_save			;	
+		std::unordered_map<std::string, int> *application_options;	
+		std::unordered_map<std::string, int> *sensor_save	 		;	
 
 	public:
-		PegFinder(char* camera_serial, char* save_file_dir, ostream* output_ss);
-		
+		PegFinder(Realsense* sensor, std::ostream* output_ss, std::unordered_map<std::string, std::unordered_map<std::string, int>*>* saved_fields );
+
 		void ProcessFrame();
 };

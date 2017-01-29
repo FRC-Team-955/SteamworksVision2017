@@ -36,7 +36,6 @@ Networking::Server::Server (int server_port) {
 }
 
 void Networking::Server::WaitForClientConnection() {
-	std::cout << "Waiting for client connection on port " << server_port << std::endl;
 	client_connect_socket_file_descriptor = accept(server_socket_file_descriptor, (struct sockaddr *) &client_address, &client_address_struct_length);
 
 	if (client_connect_socket_file_descriptor < 0) {

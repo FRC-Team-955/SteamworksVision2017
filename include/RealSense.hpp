@@ -7,7 +7,6 @@
 #include <StringHack.hpp>
 #include <cstring>
 
-using namespace std;
 using namespace cv;
 
 class Realsense

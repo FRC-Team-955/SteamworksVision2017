@@ -1,103 +1,40 @@
 #include <PegFinder.hpp>
 
-PegFinder::PegFinder(char* camera_serial, char* save_file_dir, ostream* output_ss) {
+PegFinder::PegFinder(Realsense* sensor, std::ostream* output_ss, std::unordered_map<std::string, std::unordered_map<std::string, int>*>* saved_fields ) {
 	this->output_ss = output_ss;
-	
-	//Save file handles
-	sliders_save  = {  //The default values are also used as the max values for the sliders before the file updates their values, TODO: Change this at some point, it's sloppy
-		{"hue_slider_lower"	,	179	}, //"Name", Default (AND Maximum, same number in sliders)
-		{"hue_slider_upper"	,	179	},
-		{"sat_slider_lower"	,	256	},
-		{"sat_slider_upper"	,	256	},
-		{"val_slider_lower"	,	256	},
-		{"val_slider_upper"	,	256	},
-		{"area_slider"			,	5000	}
-	};
+	this->sensor = sensor;
 
-	sensor_save = { 
-		{"depth_width"			,	480	}, 
-		{"depth_height"		,	360	}, 
-		{"depth_framerate"	,	30		}, 
-		{"bgr_width"			,	1920	}, 
-		{"bgr_height"			,	1080	}, 
-		{"bgr_framerate"		,	30		}, 
-		{"exposure"				,	30		},
-		{"serial"				,	30		} 
-	}; 
-
-	imgproc_save = {
-		{"morph_open"				,	5			},
-		{"histogram_min"			,	0			}, 
-		{"histogram_max"			,	500		},
-		{"histogram_percentile"	,	10			} 
-	};
-
-	application_options = {
-		{"show_sliders"			,	1			}, 
-		{"show_rgb"					,	1			}, 
-		{"show_depth"				,	1			}, 
-		{"show_HSV"					,	1			}, 
-		{"show_overlays"			,	1			}, 
-	}; 
-
-	saved_fields = {
-		{"Sliders"						, &sliders_save				},
-		{"Imgproc_const"				, &imgproc_save				},
-		{"Application_Options"		, &application_options		},
-		{"Sensor"						, &sensor_save	 				}  
-	};
+	sliders_save				= (*saved_fields)["Sliders"				];						
+	imgproc_save				= (*saved_fields)["Imgproc_const"		];		
+	application_options		= (*saved_fields)["Application_Options"];		
+	sensor_save	 				= (*saved_fields)["Sensor"					];	 
 
 	//Object initialization
-	save_file = new Saving(save_file_dir, &saved_fields);
+	hist_roi = new Histogram((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
+	hist_inner_roi_left = new Histogram((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
+	hist_inner_roi_right = new Histogram((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
 
-	interface = new Sliders(save_file_dir, &sliders_save, save_file); //Run this line BEFORE loading from the save file.
-
-	if (!save_file->LoadJSON()) {
-		save_file->SaveJSON(); //Create a new file with the defaults
-	}
-
-	//TODO: Better damn solution than this
-	if (application_options["show_sliders"]) {
-		interface->InitializeSliders();
-	}
-
-	interface->UpdateSliders();
-
-	hist_roi = new Histogram(imgproc_save["histogram_min"], imgproc_save["histogram_max"]);
-	hist_inner_roi_left = new Histogram(imgproc_save["histogram_min"], imgproc_save["histogram_max"]);
-	hist_inner_roi_right = new Histogram(imgproc_save["histogram_min"], imgproc_save["histogram_max"]);
-
-	sensor = new Realsense( //TODO: Pass the entire sensor_save object into the class, and use it locally there (Maybe)
-			sensor_save["depth_width"		], 
-			sensor_save["depth_height"		],
-			sensor_save["depth_framerate"	],
-			sensor_save["bgr_width"			],
-			sensor_save["bgr_height"		], 
-			sensor_save["bgr_framerate"	],
-			camera_serial
-			); 
-
-	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 2*imgproc_save["morph_open"] + 1, 2*imgproc_save["morph_open"]+1 ), Point( imgproc_save["morph_open"], imgproc_save["morph_open"] ) ); //Make sure that objects have a certain area
+	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_open"] + 1, 2*(*imgproc_save)["morph_open"]+1 ), Point( (*imgproc_save)["morph_open"], (*imgproc_save)["morph_open"] ) ); //Make sure that objects have a certain area
 }
 
 void PegFinder::ProcessFrame() {
-	
+
 	sensor->GrabFrames();
-	if (application_options["show_depth"]) {
+	if ((*application_options)["show_depth"]) {
 		imshow("DEPTH", *sensor->largeDepthCV * 6);
 	}
 
 	cvtColor (*sensor->rgbmatCV, raw_hsv_color, COLOR_BGR2HSV); // Convert to HSV colorspace
 	//TODO: Implement depth-hsv combination select. See notes/classification for more detail
 	inRange (raw_hsv_color,
-			Scalar (sliders_save["hue_slider_lower"], sliders_save["sat_slider_lower"], sliders_save["val_slider_lower"]),
-			Scalar (sliders_save["hue_slider_upper"], sliders_save["sat_slider_upper"], sliders_save["val_slider_upper"]),
+			Scalar ((*sliders_save)["hue_slider_lower"], (*sliders_save)["sat_slider_lower"], (*sliders_save)["val_slider_lower"]),
+			Scalar ((*sliders_save)["hue_slider_upper"], (*sliders_save)["sat_slider_upper"], (*sliders_save)["val_slider_upper"]),
 			hsv_range_mask);
 	morphologyEx(hsv_range_mask, hsv_range_mask_filtered, MORPH_OPEN, morph_open_struct_element);
 
 
 	//TODO: Save file selections of outputs
-	if (application_options["show_HSV"]) {
+	if ((*application_options)["show_HSV"]) {
 		imshow("HSV_RANGE_SELECT", hsv_range_mask_filtered);
 	}
 
@@ -117,7 +54,7 @@ void PegFinder::ProcessFrame() {
 		float rectangle_dim_ratio = (float)bounding_rectangle.width / (float)bounding_rectangle.height;	
 
 		//Check if it fits contour criteria (Area, and ROI width to height ratio)
-		if ( bounding_rectangle.area() >= sliders_save["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.3) ) {
+		if ( bounding_rectangle.area() >= (*sliders_save)["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.3) ) {
 			rectangle(*sensor->bgrmatCV, bounding_rectangle, Scalar(0, 255, 255), 2);
 
 			//Create a new stripe object
@@ -165,7 +102,7 @@ void PegFinder::ProcessFrame() {
 					Point(final_ROI.tl().x + (2 * final_ROI.width / 3), final_ROI.tl().y), //Get the right 1/3 of the ROI for use in slope calculations
 					final_ROI.br());
 
-			if (application_options["show_overlays"]) {
+			if ((*application_options)["show_overlays"]) {
 				rectangle(*sensor->bgrmatCV, final_ROI, Scalar(255, 0, 0), 2);  
 				line(*sensor->bgrmatCV, best_stripe->center, best_stripe_pair->center, Scalar(0, 0, 255), 3, CV_AA); 
 				//putText(*sensor->bgrmatCV, std::to_string(best_score), best_stripe_pair-> center, CV_FONT_HERSHEY_TRIPLEX, 5, Scalar(0, 0, 255)); 
@@ -186,15 +123,15 @@ void PegFinder::ProcessFrame() {
 			hist_roi->insert_histogram_data(pixelList, final_ROI.area());
 
 			//Prepare the pixel lists for the histogram classes
-			unsigned short* pixelList_left_ROI = new unsigned short[final_ROI.area()];
+			unsigned short* pixelList_left_ROI = new unsigned short[left_hist_portion_ROI.area()];
 			unsigned short *moving_pixelList_left_ROI = pixelList_left_ROI; //A pointer that gets changed, so we copy the start value
-			for (int x = final_ROI.tl().x; x < final_ROI.br().x; x++) {
-				for (int y = final_ROI.tl().y; y < final_ROI.br().y; y++) {
+			for (int x = left_hist_portion_ROI.tl().x; x < left_hist_portion_ROI.br().x; x++) {
+				for (int y = left_hist_portion_ROI.tl().y; y < left_hist_portion_ROI.br().y; y++) {
 					*moving_pixelList_left_ROI = sensor->largeDepthCV->at<unsigned short> (y, x);
 					moving_pixelList_left_ROI++;
 				}
 			}
-			hist_inner_roi_left->insert_histogram_data(pixelList_left_ROI, final_ROI.area());
+			hist_inner_roi_left->insert_histogram_data(pixelList_left_ROI, left_hist_portion_ROI.area());
 
 			//Prepare the pixel lists for the histogram classes
 			unsigned short* pixelList_right_ROI = new unsigned short[final_ROI.area()];
@@ -211,17 +148,17 @@ void PegFinder::ProcessFrame() {
 			stream_doc.reset();
 			pugi::xml_node root_node = stream_doc.append_child("Root");
 
-			int depth = hist_roi->take_percentile(imgproc_save["histogram_percentile"]);
+			int depth = hist_roi->take_percentile((*imgproc_save)["histogram_percentile"]);
 
-			int depth_left_ROI = hist_inner_roi_left->take_percentile(imgproc_save["histogram_percentile"]);
-			int depth_right_ROI = hist_inner_roi_right->take_percentile(imgproc_save["histogram_percentile"]);
+			int depth_left_ROI = hist_inner_roi_left->take_percentile((*imgproc_save)["histogram_percentile"]);
+			int depth_right_ROI = hist_inner_roi_right->take_percentile((*imgproc_save)["histogram_percentile"]);
 
 			int x_center_left_ROI = MidPoint(left_hist_portion_ROI.tl(), left_hist_portion_ROI.br()).x;
 			int x_center_right_ROI = MidPoint(right_hist_portion_ROI.tl(), right_hist_portion_ROI.br()).x;
 
 			float depth_x_slope = (float)(depth_right_ROI - depth_left_ROI) / (float)(x_center_right_ROI - x_center_left_ROI); 
 
-			int distance_to_screen_edge = sensor_save["bgr_width"] / 2;
+			int distance_to_screen_edge = (*sensor_save)["bgr_width"] / 2;
 
 			int eight_and_quarter_inches_in_px = PointDistance(&best_stripe->center, &best_stripe_pair->center);
 			float px_per_inch = (float)eight_and_quarter_inches_in_px / 8.25; 
@@ -249,7 +186,7 @@ void PegFinder::ProcessFrame() {
 	// Find the most promising pair (Closest, most centered)
 
 	//TODO: Make another mat to display on instead of writing over the sensor's mat
-	if (application_options["show_rgb"]) {
+	if ((*application_options)["show_rgb"]) {
 		imshow("COLOR", *sensor->bgrmatCV);
 	}
 
