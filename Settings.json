@@ -23,11 +23,20 @@
     },
     "Sliders": {
         "area_slider": 859,
-        "hue_slider_lower": 30,
-        "hue_slider_upper": 61,
-        "sat_slider_lower": 121,
+        "hue_slider_lower": 0,
+        "hue_slider_upper": 40,
+        "sat_slider_lower": 0,
         "sat_slider_upper": 256,
-        "val_slider_lower": 65,
+        "val_slider_lower": 0,
+        "val_slider_upper": 256
+    },
+    "Sliders_Limits": {
+        "area_slider": 5000,
+        "hue_slider_lower": 179,
+        "hue_slider_upper": 179,
+        "sat_slider_lower": 256,
+        "sat_slider_upper": 256,
+        "val_slider_lower": 256,
         "val_slider_upper": 256
     }
 }
