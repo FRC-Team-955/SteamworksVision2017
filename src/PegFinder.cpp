@@ -7,7 +7,7 @@ PegFinder::PegFinder(VideoInterface* video_interface, std::ostream* output_ss, s
 	sliders_save				= (*saved_fields)["Sliders"				];						
 	imgproc_save				= (*saved_fields)["Imgproc_const"		];		
 	application_options		= (*saved_fields)["Application_Options"];		
-	video_interface_save	 				= (*saved_fields)["Sensor"					];	 
+	video_interface_save	 	= (*saved_fields)["Sensor"					];	 
 
 	//Object initialization
 	hist_roi = new Histogram((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
@@ -178,11 +178,6 @@ void PegFinder::ProcessFrame() {
 			delete[] pixelList;
 			delete[] pixelList_left_ROI;
 			delete[] pixelList_right_ROI;
-		}
-
-		//TODO: Allocating and deallocating all of this memory is _wasteful_, find another way?
-		for (auto& stripe : stripes) {
-			delete[] stripe;
 		}
 	}
 
