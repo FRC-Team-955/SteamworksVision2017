@@ -5,7 +5,7 @@
 #include <unordered_map> //Faster lookup times, O(1) instead of O(log n) !
 #include <Histogram.hpp>
 #include <ostream>
-#include <RealSense.hpp>
+#include <VideoInterface.hpp>
 #include <pugixml.hpp>
 
 using namespace cv;
@@ -13,7 +13,7 @@ using namespace cv;
 class PegFinder {
 	private:
 		//Runtime objects
-		Realsense* sensor; 
+		VideoInterface* video_interface; 
 		Histogram* hist_roi;
 		Histogram* hist_inner_roi_left;
 		Histogram* hist_inner_roi_right;
@@ -37,8 +37,8 @@ class PegFinder {
 			Rect ROI;
 			Point center;
 
-			float ScorePair (stripe_object* other) {
-				//TODO: NO HARDCODED BIAS
+			float ScorePair (stripe_object* other) { //TODO: Remove this struct entirely
+				//TODO: NO HARDCODED BIAS, EWWW
 				float position_difference_inv = (100.0 / abs(center.y - other->center.y)) + (1.0 / abs(center.x - other->center.x));
 				float area_difference_inv = 1.0 / fabs(other->ROI.area() - ROI.area()); 
 				if (position_difference_inv > 0) { //If the distance is 0, it's the same object and that's not okay
@@ -67,15 +67,17 @@ class PegFinder {
 
 		pugi::xml_document stream_doc; //For serialising to the RIO
 
-		//FIND A BETTER WAY TO DO THIS
+		//TODO: FIND A BETTER WAY TO DO THIS
 		std::unordered_map<std::string, int> *sliders_save			;	
 		std::unordered_map<std::string, int> *sliders_limits		;	
 		std::unordered_map<std::string, int> *imgproc_save			;	
 		std::unordered_map<std::string, int> *application_options;	
-		std::unordered_map<std::string, int> *sensor_save	 		;	
+		std::unordered_map<std::string, int> *video_interface_save	 		;	
 
 	public:
-		PegFinder(Realsense* sensor, std::ostream* output_ss, std::unordered_map<std::string, std::unordered_map<std::string, int>*>* saved_fields );
+		PegFinder(VideoInterface* video_interface, std::ostream* output_ss, std::unordered_map<std::string, std::unordered_map<std::string, int>*>* saved_fields );
 
 		void ProcessFrame();
+
+		~PegFinder();
 };

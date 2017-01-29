@@ -1,13 +1,13 @@
 #include <PegFinder.hpp>
 
-PegFinder::PegFinder(Realsense* sensor, std::ostream* output_ss, std::unordered_map<std::string, std::unordered_map<std::string, int>*>* saved_fields ) {
+PegFinder::PegFinder(VideoInterface* video_interface, std::ostream* output_ss, std::unordered_map<std::string, std::unordered_map<std::string, int>*>* saved_fields ) {
 	this->output_ss = output_ss;
-	this->sensor = sensor;
+	this->video_interface = video_interface;
 
 	sliders_save				= (*saved_fields)["Sliders"				];						
 	imgproc_save				= (*saved_fields)["Imgproc_const"		];		
 	application_options		= (*saved_fields)["Application_Options"];		
-	sensor_save	 				= (*saved_fields)["Sensor"					];	 
+	video_interface_save	 				= (*saved_fields)["Sensor"					];	 
 
 	//Object initialization
 	hist_roi = new Histogram((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
@@ -19,12 +19,12 @@ PegFinder::PegFinder(Realsense* sensor, std::ostream* output_ss, std::unordered_
 
 void PegFinder::ProcessFrame() {
 
-	sensor->GrabFrames();
+	video_interface->GrabFrames();
 	if ((*application_options)["show_depth"]) {
-		imshow("DEPTH", *sensor->largeDepthCV * 6);
+		imshow("DEPTH", *video_interface->largeDepthCV * 6);
 	}
 
-	cvtColor (*sensor->rgbmatCV, raw_hsv_color, COLOR_BGR2HSV); // Convert to HSV colorspace
+	cvtColor (*video_interface->rgbmatCV, raw_hsv_color, COLOR_BGR2HSV); // Convert to HSV colorspace
 	//TODO: Implement depth-hsv combination select. See notes/classification for more detail
 	inRange (raw_hsv_color,
 			Scalar ((*sliders_save)["hue_slider_lower"], (*sliders_save)["sat_slider_lower"], (*sliders_save)["val_slider_lower"]),
@@ -55,7 +55,7 @@ void PegFinder::ProcessFrame() {
 
 		//Check if it fits contour criteria (Area, and ROI width to height ratio)
 		if ( bounding_rectangle.area() >= (*sliders_save)["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.3) ) {
-			rectangle(*sensor->bgrmatCV, bounding_rectangle, Scalar(0, 255, 255), 2);
+			rectangle(*video_interface->bgrmatCV, bounding_rectangle, Scalar(0, 255, 255), 2);
 
 			//Create a new stripe object
 			stripe_object* stripe = new stripe_object;
@@ -64,7 +64,7 @@ void PegFinder::ProcessFrame() {
 			stripes.push_back(stripe); 
 
 		} else {
-			rectangle(*sensor->bgrmatCV, bounding_rectangle, Scalar(0, 0, 255), 2);
+			rectangle(*video_interface->bgrmatCV, bounding_rectangle, Scalar(0, 0, 255), 2);
 		}
 	}
 
@@ -103,20 +103,20 @@ void PegFinder::ProcessFrame() {
 					final_ROI.br());
 
 			if ((*application_options)["show_overlays"]) {
-				rectangle(*sensor->bgrmatCV, final_ROI, Scalar(255, 0, 0), 2);  
-				line(*sensor->bgrmatCV, best_stripe->center, best_stripe_pair->center, Scalar(0, 0, 255), 3, CV_AA); 
-				//putText(*sensor->bgrmatCV, std::to_string(best_score), best_stripe_pair-> center, CV_FONT_HERSHEY_TRIPLEX, 5, Scalar(0, 0, 255)); 
+				rectangle(*video_interface->bgrmatCV, final_ROI, Scalar(255, 0, 0), 2);  
+				line(*video_interface->bgrmatCV, best_stripe->center, best_stripe_pair->center, Scalar(0, 0, 255), 3, CV_AA); 
+				//putText(*video_interface->bgrmatCV, std::to_string(best_score), best_stripe_pair-> center, CV_FONT_HERSHEY_TRIPLEX, 5, Scalar(0, 0, 255)); 
 			}
 
-			rectangle(*sensor->bgrmatCV, left_hist_portion_ROI, Scalar(255, 0, 255), 2);  
-			rectangle(*sensor->bgrmatCV, right_hist_portion_ROI, Scalar(255, 0, 255), 2);  
+			rectangle(*video_interface->bgrmatCV, left_hist_portion_ROI, Scalar(255, 0, 255), 2);  
+			rectangle(*video_interface->bgrmatCV, right_hist_portion_ROI, Scalar(255, 0, 255), 2);  
 
 			//Prepare the pixel lists for the histogram classes
 			unsigned short* pixelList = new unsigned short[final_ROI.area()];
 			unsigned short *moving_pixelList = pixelList; //A pointer that gets changed, so we copy the start value
 			for (int x = final_ROI.tl().x; x < final_ROI.br().x; x++) {
 				for (int y = final_ROI.tl().y; y < final_ROI.br().y; y++) {
-					*moving_pixelList = sensor->largeDepthCV->at<unsigned short> (y, x);
+					*moving_pixelList = video_interface->largeDepthCV->at<unsigned short> (y, x);
 					moving_pixelList++;
 				}
 			}
@@ -127,7 +127,7 @@ void PegFinder::ProcessFrame() {
 			unsigned short *moving_pixelList_left_ROI = pixelList_left_ROI; //A pointer that gets changed, so we copy the start value
 			for (int x = left_hist_portion_ROI.tl().x; x < left_hist_portion_ROI.br().x; x++) {
 				for (int y = left_hist_portion_ROI.tl().y; y < left_hist_portion_ROI.br().y; y++) {
-					*moving_pixelList_left_ROI = sensor->largeDepthCV->at<unsigned short> (y, x);
+					*moving_pixelList_left_ROI = video_interface->largeDepthCV->at<unsigned short> (y, x);
 					moving_pixelList_left_ROI++;
 				}
 			}
@@ -138,7 +138,7 @@ void PegFinder::ProcessFrame() {
 			unsigned short *moving_pixelList_right_ROI = pixelList_right_ROI; //A pointer that gets changed, so we copy the start value
 			for (int x = final_ROI.tl().x; x < final_ROI.br().x; x++) {
 				for (int y = final_ROI.tl().y; y < final_ROI.br().y; y++) {
-					*moving_pixelList_right_ROI = sensor->largeDepthCV->at<unsigned short> (y, x);
+					*moving_pixelList_right_ROI = video_interface->largeDepthCV->at<unsigned short> (y, x);
 					moving_pixelList_right_ROI++;
 				}
 			}
@@ -158,7 +158,7 @@ void PegFinder::ProcessFrame() {
 
 			float depth_x_slope = (float)(depth_right_ROI - depth_left_ROI) / (float)(x_center_right_ROI - x_center_left_ROI); 
 
-			int distance_to_screen_edge = (*sensor_save)["bgr_width"] / 2;
+			int distance_to_screen_edge = (*video_interface_save)["bgr_width"] / 2;
 
 			int eight_and_quarter_inches_in_px = PointDistance(&best_stripe->center, &best_stripe_pair->center);
 			float px_per_inch = (float)eight_and_quarter_inches_in_px / 8.25; 
@@ -179,18 +179,27 @@ void PegFinder::ProcessFrame() {
 			delete[] pixelList_left_ROI;
 			delete[] pixelList_right_ROI;
 		}
+
+		//TODO: Allocating and deallocating all of this memory is _wasteful_, find another way?
+		for (auto& stripe : stripes) {
+			delete[] stripe;
+		}
 	}
 
 	//Get a box that encapsulates both stripes
 
 	// Find the most promising pair (Closest, most centered)
 
-	//TODO: Make another mat to display on instead of writing over the sensor's mat
+	//TODO: Make another mat to display on instead of writing over the video_interface's mat
 	if ((*application_options)["show_rgb"]) {
-		imshow("COLOR", *sensor->bgrmatCV);
+		imshow("COLOR", *video_interface->bgrmatCV);
 	}
 
 	waitKey(10);
+}
 
-
+PegFinder::~PegFinder() {
+	delete[] hist_roi;
+	delete[] hist_inner_roi_left;
+	delete[] hist_inner_roi_right;
 }

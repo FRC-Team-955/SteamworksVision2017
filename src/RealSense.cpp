@@ -1,5 +1,7 @@
 #include "RealSense.hpp"
 
+//TODO: Make the realsense class inherit from a base that can also be used to provide a dummy camera that can accept video!
+
 void Realsense::GrabFrames () {
 	if (ctx.get_device_count() > 0)	{
 		dev->wait_for_frames();
@@ -55,9 +57,12 @@ void Realsense::SetColorExposure(int exposure) {
 	dev->set_option(rs::option::color_exposure, exposure);
 }
 
-// Free up memory/stop processes
-// TODO: Clean up the device object! (dev)
 Realsense::~Realsense() {
+	delete[] bgrmatCV;	 
+	delete[]	rgbmatCV;	 
+	delete[]	registeredCV;	 
+	delete[]	largeDepthCV;	 
+	delete[]	depthmatCV;
 }
 
 bool Realsense::GetDeviceBySerial(char* serial) {

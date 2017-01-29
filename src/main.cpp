@@ -96,11 +96,12 @@ int main (int argc, char** argv) {
 	}
 	interface->UpdateSliders();
 
+	//TODO: Dedicated human display buffer instead of using the default realsense one
 	PegFinder* finder = new PegFinder(sensor, &std::cout, &saved_fields);
 
-	//while (true) {
-	//	finder->ProcessFrame();
-	//}
+	while (true) {
+		finder->ProcessFrame();
+	}
 
 	//Trevor sends me either one or the other messages, so I just have one thread that waits for a message, and when it accepts the
 	//message it interprets it, and then it uses either of the modules' process_frame functions to send back a message to trevor.

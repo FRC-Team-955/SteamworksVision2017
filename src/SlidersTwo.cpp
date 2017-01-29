@@ -26,4 +26,3 @@ void Sliders::UpdateSliders () { //Write over the sliders - opencv's sliders' va
 	}
 }
 
-//TODO: Deallocate memory!
