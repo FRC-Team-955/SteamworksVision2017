@@ -25,7 +25,7 @@ Networking::Server::Server (int server_port) {
 	}
 
 	if (bind(server_socket_file_descriptor, (struct sockaddr *) &server_address, sizeof(sockaddr)) < 0) {
-		std::cerr << "Socket binding error" << std::endl;
+		std::cerr << "Server socket binding error" << std::endl;
 		exit(-1);
 	}
 
@@ -36,6 +36,7 @@ Networking::Server::Server (int server_port) {
 }
 
 void Networking::Server::WaitForClientConnection() {
+	//close(client_connect_socket_file_descriptor);
 	client_connect_socket_file_descriptor = accept(server_socket_file_descriptor, (struct sockaddr *) &client_address, &client_address_struct_length);
 
 	if (client_connect_socket_file_descriptor < 0) {
@@ -51,14 +52,18 @@ int Networking::Server::WaitForClientMessage (std::ostream* out_stream) {
 	char errbuf;
 	int errorcode = recv(client_connect_socket_file_descriptor, &errbuf, 1, MSG_PEEK); 
 	std::string message = "";
-	int message_read_length;
+	size_t message_read_length;
 	char buffer[BUFFER_SIZE];
 
 	do {
 		bzero(buffer, BUFFER_SIZE); //This is very important. Otherwise you get garbage (dirty mem!)
 		message_read_length = read(client_connect_socket_file_descriptor, buffer, BUFFER_SIZE - 1); 
 		*out_stream << buffer;
-	} while (message_read_length > 0 && client_connect_socket_file_descriptor >= 0);
+	} while (message_read_length == BUFFER_SIZE - 1 && client_connect_socket_file_descriptor >= 0); //Keep reading until the message size is less than the buffer size (It's finished)
 	return errorcode;
 }
 
+//TODO: Change this to a stream input instead!
+void Networking::Server::SendClientMessage(const char* stream_buffer) {
+		write(client_connect_socket_file_descriptor, stream_buffer, strlen(stream_buffer));
+}

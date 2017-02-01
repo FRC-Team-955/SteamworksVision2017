@@ -43,7 +43,7 @@ Realsense::Realsense(int depth_width, int depth_height, int depth_framerate, int
 	dev->enable_stream(rs::stream::depth, depth_width, depth_height, rs::format::z16, depth_framerate);
 	dev->enable_stream(rs::stream::color, bgr_width, bgr_height, rs::format::rgb8, bgr_framerate);
 	//dev->enable_stream(rs::stream::infrared2, 480, 360, rs::format::y8, bgr_framerate); //Change this line to include a save file option if you do end up using infrared
-	
+
 	dev->start();
 
 }

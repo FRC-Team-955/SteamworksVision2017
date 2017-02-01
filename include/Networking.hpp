@@ -32,6 +32,8 @@ namespace Networking {
 			void WaitForClientConnection ();
 
 			int WaitForClientMessage (std::ostream* out_stream);
+
+			void SendClientMessage (const char* stream_buffer);
 			
 	};
 }

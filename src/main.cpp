@@ -83,7 +83,6 @@ int main (int argc, char** argv) {
 			serial
 			); 
 
-
 	Saving* save_file = new Saving(argv[1], &saved_fields);
 	if (!save_file->LoadJSON()) {
 		save_file->SaveJSON(); 
@@ -96,26 +95,18 @@ int main (int argc, char** argv) {
 	}
 	interface->UpdateSliders();
 
-	//TODO: Dedicated human display buffer instead of using the default realsense one
-	PegFinder* finder = new PegFinder(sensor, &std::cout, &saved_fields);
+	Networking::Server* serv = new Networking::Server(5806);			
 
-	while (true) {
-		finder->ProcessFrame();
+	std::stringstream message_bus;
+	PegFinder* finder = new PegFinder(sensor, &message_bus, &saved_fields);
+	while(true) {
+		std::cout << "Waiting for client connection on port " << 5806 << std::endl;
+		serv->WaitForClientConnection();
+		while (serv->WaitForClientMessage(&std::cout)) {
+			message_bus.str("");
+			finder->ProcessFrame();
+			serv->SendClientMessage(message_bus.str().c_str());
+		}
+		std::cout << "Connection stopped. Uh oh." << std::endl;
 	}
-
-	//Trevor sends me either one or the other messages, so I just have one thread that waits for a message, and when it accepts the
-	//message it interprets it, and then it uses either of the modules' process_frame functions to send back a message to trevor.
-
-	//TODO: Test slope calc!
-
-	//	Networking::Server* serv = new Networking::Server(5805);			
-	//
-	//	while(true) {
-	//		std::cout << "Waiting for client connection on port " << 5805 << std::endl;
-	//		serv->WaitForClientConnection();
-	//		while (serv->WaitForClientMessage(&std::cout)) {
-	//		}
-	//		std::cout << "Connection stopped. Uh oh." << std::endl;
-	//	}
-
 }

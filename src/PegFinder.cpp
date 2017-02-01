@@ -43,7 +43,6 @@ void PegFinder::ProcessFrame() {
 	for (auto& stripe : stripes) {
 		delete[] stripe;
 	}
-
 	stripes.clear();
 	for (auto& contour : contours) {
 
@@ -54,7 +53,8 @@ void PegFinder::ProcessFrame() {
 		float rectangle_dim_ratio = (float)bounding_rectangle.width / (float)bounding_rectangle.height;	
 
 		//Check if it fits contour criteria (Area, and ROI width to height ratio)
-		if ( bounding_rectangle.area() >= (*sliders_save)["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.3) ) {
+		//TODO: Set the tolerance from the save file!
+		if ( bounding_rectangle.area() >= (*sliders_save)["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.2) ) {
 			rectangle(*video_interface->bgrmatCV, bounding_rectangle, Scalar(0, 255, 255), 2);
 
 			//Create a new stripe object
@@ -102,6 +102,13 @@ void PegFinder::ProcessFrame() {
 					Point(final_ROI.tl().x + (2 * final_ROI.width / 3), final_ROI.tl().y), //Get the right 1/3 of the ROI for use in slope calculations
 					final_ROI.br());
 
+			//TODO: Move these constants to variables in the save file
+			left_hist_portion_ROI.x -= left_hist_portion_ROI.width * 5;
+			right_hist_portion_ROI.x += right_hist_portion_ROI.width * 5;
+
+			left_hist_portion_ROI.width += left_hist_portion_ROI.width;
+			right_hist_portion_ROI.width += right_hist_portion_ROI.width;
+
 			if ((*application_options)["show_overlays"]) {
 				rectangle(*video_interface->bgrmatCV, final_ROI, Scalar(255, 0, 0), 2);  
 				line(*video_interface->bgrmatCV, best_stripe->center, best_stripe_pair->center, Scalar(0, 0, 255), 3, CV_AA); 
@@ -134,15 +141,15 @@ void PegFinder::ProcessFrame() {
 			hist_inner_roi_left->insert_histogram_data(pixelList_left_ROI, left_hist_portion_ROI.area());
 
 			//Prepare the pixel lists for the histogram classes
-			unsigned short* pixelList_right_ROI = new unsigned short[final_ROI.area()];
+			unsigned short* pixelList_right_ROI = new unsigned short[right_hist_portion_ROI.area()];
 			unsigned short *moving_pixelList_right_ROI = pixelList_right_ROI; //A pointer that gets changed, so we copy the start value
-			for (int x = final_ROI.tl().x; x < final_ROI.br().x; x++) {
-				for (int y = final_ROI.tl().y; y < final_ROI.br().y; y++) {
+			for (int x = right_hist_portion_ROI.tl().x; x < right_hist_portion_ROI.br().x; x++) {
+				for (int y = right_hist_portion_ROI.tl().y; y < right_hist_portion_ROI.br().y; y++) {
 					*moving_pixelList_right_ROI = video_interface->largeDepthCV->at<unsigned short> (y, x);
 					moving_pixelList_right_ROI++;
 				}
 			}
-			hist_inner_roi_right->insert_histogram_data(pixelList_right_ROI, final_ROI.area());
+			hist_inner_roi_right->insert_histogram_data(pixelList_right_ROI, right_hist_portion_ROI.area());
 
 			//TODO: Move this to the save class instead
 			stream_doc.reset();
@@ -156,24 +163,44 @@ void PegFinder::ProcessFrame() {
 			int x_center_left_ROI = MidPoint(left_hist_portion_ROI.tl(), left_hist_portion_ROI.br()).x;
 			int x_center_right_ROI = MidPoint(right_hist_portion_ROI.tl(), right_hist_portion_ROI.br()).x;
 
-			float depth_x_slope = (float)(depth_right_ROI - depth_left_ROI) / (float)(x_center_right_ROI - x_center_left_ROI); 
-
 			int distance_to_screen_edge = (*video_interface_save)["bgr_width"] / 2;
 
 			int eight_and_quarter_inches_in_px = PointDistance(&best_stripe->center, &best_stripe_pair->center);
 			float px_per_inch = (float)eight_and_quarter_inches_in_px / 8.25; 
 
+			//Left and right center x positions in inches 
+			float x_center_left_ROI_inch = x_center_left_ROI / px_per_inch;
+			float x_center_right_ROI_inch = x_center_right_ROI / px_per_inch;
+
+			//Left and right center depths in inches
+			float depth_left_ROI_inch = (float)depth_left_ROI * 0.0393701f;
+			float depth_right_ROI_inch = (float)depth_right_ROI * 0.0393701f;
+
+			float depth_x_slope = (float)(depth_right_ROI_inch - depth_left_ROI_inch) / (float)(x_center_right_ROI_inch - x_center_left_ROI_inch); 
+
 			int magnitude_x_px = MidPoint(best_stripe->center, best_stripe_pair->center).x - distance_to_screen_edge;
 			float magnitude_x_inch = magnitude_x_px / px_per_inch;
 
+			float angle = (atanf(depth_x_slope) * 180.0f) / PI;
+
 			//TODO: Time stamping!
-			if (depth > 0) {
-				root_node.append_attribute("distance_to_target") = depth; 
-				root_node.append_attribute("slope_depth") = depth_x_slope;
-				root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
-				root_node.append_attribute("slope_height") = (float)(best_stripe->center.y - best_stripe_pair->center.y) / (float)(best_stripe->center.x - best_stripe_pair->center.x);
-				root_node.append_attribute("x_magnitude_inch") = magnitude_x_inch; 
-				stream_doc.save(*output_ss); //TODO: Set to named pipe later
+			if (depth > 0 && depth_left_ROI_inch > 0 && depth_right_ROI_inch > 0) {
+				//root_node.append_attribute("distance_to_target") = depth; 
+				//root_node.append_attribute("slope_depth") = depth_x_slope;
+				//root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
+				//root_node.append_attribute("slope_height") = (float)(best_stripe->center.y - best_stripe_pair->center.y) / (float)(best_stripe->center.x - best_stripe_pair->center.x);
+				//root_node.append_attribute("x_magnitude_inch") = magnitude_x_inch; 
+				//root_node.append_attribute("angle") = angle; 
+				//stream_doc.save(*output_ss); //TODO: Set to named pipe later
+				*output_ss << "angle: " << angle << std::endl;
+				*output_ss << " x left center offset inch: " << x_center_left_ROI_inch << std::endl;
+				*output_ss << "  x right center offset inch: " << x_center_right_ROI_inch << std::endl;
+				*output_ss << "   center x offsets: " << fabs(x_center_right_ROI_inch - x_center_left_ROI_inch) << std::endl;
+				*output_ss << "    x left center depth inch: " << depth_left_ROI_inch << std::endl;
+				*output_ss << "     x right center depth inch: " << depth_right_ROI_inch << std::endl;
+				*output_ss << "      center depth offsets: " << fabs(depth_right_ROI_inch - depth_left_ROI_inch) << std::endl;
+				*output_ss << "       depth_x_slope: " << depth_x_slope << std::endl;
+				//*output_ss << "timestamp: " << video_interface<< std::endl;
 			}
 			delete[] pixelList;
 			delete[] pixelList_left_ROI;
