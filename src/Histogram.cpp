@@ -27,6 +27,19 @@ void Histogram::insert_histogram_data (unsigned short* data, size_t data_length)
 
 }
 
+void Histogram::insert_histogram_data (cv::Rect* image_ROI, cv::Mat* image) {
+	unsigned short pixel = 0;
+	for (size_t x = image_ROI->x; x < image_ROI->width; x++) {
+		for (size_t y = image_ROI->y; x < image_ROI->height; y++) {
+			pixel = image->at<unsigned short> (y, x); 
+			if (pixel >= min && pixel <= max) {
+				histogram[pixel - min]++;
+				data_sum++;
+			}
+		}
+	}
+}
+
 unsigned short Histogram::take_percentile (int percentile) {
 	unsigned short* histogram_start_copy = histogram;
 	unsigned long accumulator = 0;

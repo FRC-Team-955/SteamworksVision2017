@@ -118,6 +118,11 @@ void PegFinder::ProcessFrame() {
 			rectangle(*video_interface->bgrmatCV, left_hist_portion_ROI, Scalar(255, 0, 255), 2);  
 			rectangle(*video_interface->bgrmatCV, right_hist_portion_ROI, Scalar(255, 0, 255), 2);  
 
+			hist_roi->insert_histogram_data(&final_ROI, video_interface->largeDepthCV);
+			hist_roi->insert_histogram_data(&left_hist_portion_ROI, video_interface->largeDepthCV);
+			hist_roi->insert_histogram_data(&right_hist_portion_ROI, video_interface->largeDepthCV);
+/*
+ * Reinstitute the delete[]s that do the unsigned shorts
 			//Prepare the pixel lists for the histogram classes
 			unsigned short* pixelList = new unsigned short[final_ROI.area()];
 			unsigned short *moving_pixelList = pixelList; //A pointer that gets changed, so we copy the start value
@@ -150,7 +155,7 @@ void PegFinder::ProcessFrame() {
 				}
 			}
 			hist_inner_roi_right->insert_histogram_data(pixelList_right_ROI, right_hist_portion_ROI.area());
-
+*/
 			//TODO: Move this to the save class instead
 			stream_doc.reset();
 			pugi::xml_node root_node = stream_doc.append_child("Root");
@@ -202,9 +207,9 @@ void PegFinder::ProcessFrame() {
 				*output_ss << "       depth_x_slope: " << depth_x_slope << std::endl;
 				//*output_ss << "timestamp: " << video_interface<< std::endl;
 			}
-			delete[] pixelList;
-			delete[] pixelList_left_ROI;
-			delete[] pixelList_right_ROI;
+			//delete[] pixelList;
+			//delete[] pixelList_left_ROI;
+			//delete[] pixelList_right_ROI;
 		}
 	}
 
