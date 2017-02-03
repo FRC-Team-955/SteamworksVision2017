@@ -9,16 +9,21 @@
 #include <DummyCamera.hpp>
 #include <opencv2/opencv.hpp>
 
-int main (int argc, char** argv) {
-	//Command args
-	if (argc < 2) {
-		std::cerr << "Usage: " <<
-			"\n\t " << argv[0] << " <Settings.json>" << std::endl;
-		return -1;
-	} 
 
-	//File saving properties
-	std::unordered_map<std::string, int> sliders_save  = {  
+std::unordered_map<std::string, std::unordered_map<std::string, int>*> saved_fields;
+std::unordered_map<std::string, int> application_options;
+std::unordered_map<std::string, int> imgproc_save;
+std::unordered_map<std::string, int> sensor_save;
+std::unordered_map<std::string, int> sliders_save_limits;
+std::unordered_map<std::string, int> sliders_save;
+char* save_file_dir;
+Saving* save_file;
+Sliders* interface;
+VideoInterface* sensor;
+
+void InitializeSaveFile () {
+	//File saving fields
+	sliders_save  = {  
 		{"hue_slider_lower"	,	179	}, 
 		{"hue_slider_upper"	,	179	},
 		{"sat_slider_lower"	,	256	},
@@ -28,7 +33,7 @@ int main (int argc, char** argv) {
 		{"area_slider"			,	5000	}
 	};
 
-	std::unordered_map<std::string, int> sliders_save_limits  = {  
+	sliders_save_limits  = {  
 		{"hue_slider_lower"	,	179	}, 
 		{"hue_slider_upper"	,	179	},
 		{"sat_slider_lower"	,	256	},
@@ -38,7 +43,7 @@ int main (int argc, char** argv) {
 		{"area_slider"			,	5000	}
 	};
 
-	std::unordered_map<std::string, int> sensor_save = { 
+	sensor_save = { 
 		{"depth_width"			,	480	}, 
 		{"depth_height"		,	360	}, 
 		{"depth_framerate"	,	30		}, 
@@ -48,22 +53,23 @@ int main (int argc, char** argv) {
 		{"exposure"				,	30		} 
 	}; 
 
-	std::unordered_map<std::string, int> imgproc_save = {
+	imgproc_save = {
 		{"morph_open"				,	5			},
 		{"histogram_min"			,	0			}, 
 		{"histogram_max"			,	500		},
 		{"histogram_percentile"	,	10			} 
 	};
 
-	std::unordered_map<std::string, int> application_options = {
-		{"show_sliders"			,	1			}, 
-		{"show_rgb"					,	1			}, 
-		{"show_depth"				,	1			}, 
-		{"show_HSV"					,	1			}, 
-		{"show_overlays"			,	1			}, 
+	application_options = {
+		{"static_test"				,	0	}, 
+		{"show_sliders"			,	1	}, 
+		{"show_rgb"					,	1	}, 
+		{"show_depth"				,	1	}, 
+		{"show_HSV"					,	1	}, 
+		{"show_overlays"			,	1	}, 
 	}; 
 
-	std::unordered_map<std::string, std::unordered_map<std::string, int>*> saved_fields = {
+	saved_fields = {
 		{"Sliders_Limits"				, &sliders_save_limits		},
 		{"Sliders"						, &sliders_save				},
 		{"Imgproc_const"				, &imgproc_save				},
@@ -71,12 +77,20 @@ int main (int argc, char** argv) {
 		{"Sensor"						, &sensor_save	 				}  
 	};
 
+	save_file = new Saving(save_file_dir, &saved_fields);
 
-	//TODO: Implement a better file saving system! Unordered maps with only ints cannot handle the serial numbers of the cameras
+	if (!save_file->LoadJSON()) {
+		std::cerr << "Save file does not exist. Creating defaults..." << std::endl;
+		save_file->SaveJSON(); 
+		std::cerr << "Finished creating defaults." << std::endl;
+	}
+
+}
+
+void ServerMode() {
 	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
 
-	/*
-	Realsense* sensor = new Realsense( //TODO: Pass the entire sensor_save object into the class, and use it locally there (Maybe)
+	sensor = new Realsense( //TODO: Pass the entire sensor_save object into the class, and use it locally there (Maybe)
 			sensor_save["depth_width"		], 
 			sensor_save["depth_height"		],
 			sensor_save["depth_framerate"	],
@@ -85,33 +99,12 @@ int main (int argc, char** argv) {
 			sensor_save["bgr_framerate"	],
 			serial
 			); 
-			*/
-	
-	DummyCamera* sensor = new DummyCamera("./Picture.png",
-			sensor_save["depth_width"		], 
-			sensor_save["depth_height"		],
-			sensor_save["bgr_width"			],
-			sensor_save["bgr_height"		] 
-			); 
-
-	Saving* save_file = new Saving(argv[1], &saved_fields);
-	if (!save_file->LoadJSON()) {
-		save_file->SaveJSON(); 
-		std::cerr << "Save file does not exist. Creating defaults..." << std::endl;
-	}
-	Sliders* interface = new Sliders("Peg_Finder_Sliders", &sliders_save, &sliders_save_limits, save_file); 
-
-	if (application_options["show_sliders"]) {
-		interface->InitializeSliders();
-	}
-	interface->UpdateSliders();
 
 	Networking::Server* serv = new Networking::Server(5806);			
 
 	cv::Mat display_out;
 	display_out = *sensor->bgrmatCV;
 
-	std::stringstream message_bus;
 	PegFinder* finder = new PegFinder(sensor, &saved_fields);
 	while(true) {
 		std::cout << "Waiting for client connection on port " << 5806 << std::endl;
@@ -123,4 +116,61 @@ int main (int argc, char** argv) {
 		}
 		std::cout << "Connection stopped. Uh oh." << std::endl;
 	}
+
 }
+
+void TestMode(char* rgb_directory, char* depth_directory) {
+	sensor = new DummyCamera(
+			rgb_directory,
+			depth_directory,
+			sensor_save["depth_width"		], 
+			sensor_save["depth_height"		],
+			sensor_save["bgr_width"			],
+			sensor_save["bgr_height"		] 
+			); 
+
+	PegFinder* finder = new PegFinder(sensor, &saved_fields);
+
+	while(true) {
+		sensor->GrabFrames();
+		std::cout << finder->ProcessFrame() << std::endl;
+		cv::waitKey(10);
+	}
+}
+
+int main (int argc, char** argv) {
+	//Command args
+	if (argc < 2) {
+		std::cerr << "Usage: " <<
+			"\n\t " << argv[0] << " <Settings.json>" << std::endl;
+		return -1;
+	} 
+
+	save_file_dir = argv[1];
+
+	InitializeSaveFile();
+
+	if (application_options["static_test"] == 1) {
+		if (argc < 4) {
+			std::cerr << "Test mode active, requires 2 additional arguements." << 
+				"\nUsage" << 
+				"\n\t" << argv[0] << " <Setings.json> <RGB.png> <Depth.png>" << std::endl;
+		}
+	}
+
+	Sliders* interface = new Sliders("Peg_Finder_Sliders", &sliders_save, &sliders_save_limits, save_file); 
+
+	if (application_options["show_sliders"]) {
+		interface->InitializeSliders();
+	}
+	interface->UpdateSliders();
+
+	if (application_options["static_test"] == 1) {
+		TestMode();
+	} else {
+		ServerMode();
+	}
+
+}
+
+

@@ -5,9 +5,10 @@
 
 class DummyCamera : public VideoInterface {
 	private:
-		const char* directory;
+		const char* bgr_directory;
+		const char* depth_directory;
 	public:
-		DummyCamera(const char* directory, int depth_width, int depth_height, int bgr_width, int bgr_height);
+		DummyCamera(const char* bgr_directory, const char* depth_directory, int depth_width, int depth_height, int bgr_width, int bgr_height);
 
 		void GrabFrames();
 
