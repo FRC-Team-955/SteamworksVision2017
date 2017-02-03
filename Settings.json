@@ -8,7 +8,7 @@
         "static_test": 1
     },
     "Imgproc_const": {
-        "histogram_max": 500,
+        "histogram_max": 10000,
         "histogram_min": 0,
         "histogram_percentile": 10,
         "morph_open": 5
@@ -23,12 +23,12 @@
         "exposure": 30
     },
     "Sliders": {
-        "area_slider": 5000,
-        "hue_slider_lower": 179,
+        "area_slider": 282,
+        "hue_slider_lower": 63,
         "hue_slider_upper": 179,
-        "sat_slider_lower": 256,
+        "sat_slider_lower": 193,
         "sat_slider_upper": 256,
-        "val_slider_lower": 256,
+        "val_slider_lower": 0,
         "val_slider_upper": 256
     },
     "Sliders_Limits": {

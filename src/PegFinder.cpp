@@ -166,7 +166,7 @@ std::string PegFinder::ProcessFrame() {
 			float angle = (atanf(depth_x_slope) * 180.0f) / PI;
 
 			//TODO: Time stamping!
-			if (depth > 0 && depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
+			//if (depth > 0 && depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
 				//root_node.append_attribute("distance_to_target") = depth; 
 				//root_node.append_attribute("slope_depth") = depth_x_slope;
 				//root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
@@ -187,7 +187,7 @@ std::string PegFinder::ProcessFrame() {
 				stream_doc.save(ss);
 				ret = ss.str();
 				//*output_ss << "timestamp: " << video_interface<< std::endl;
-			}
+			//}
 		}
 	}
 
