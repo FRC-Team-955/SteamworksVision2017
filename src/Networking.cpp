@@ -47,23 +47,24 @@ void Networking::Server::WaitForClientConnection() {
 	std::cout << "Socket connected! Communication may proceed." << std::endl;
 }
 
-int Networking::Server::WaitForClientMessage (std::ostream* out_stream) {
+std::string Networking::Server::WaitForClientMessage () {
 	//[Googling problems intensifies]
-	char errbuf;
-	int errorcode = recv(client_connect_socket_file_descriptor, &errbuf, 1, MSG_PEEK); 
-	std::string message = "";
 	size_t message_read_length;
 	char buffer[BUFFER_SIZE];
-
+	std::string ret;
 	do {
 		bzero(buffer, BUFFER_SIZE); //This is very important. Otherwise you get garbage (dirty mem!)
 		message_read_length = read(client_connect_socket_file_descriptor, buffer, BUFFER_SIZE - 1); 
-		*out_stream << buffer;
+		ret.append(buffer);
 	} while (message_read_length == BUFFER_SIZE - 1 && client_connect_socket_file_descriptor >= 0); //Keep reading until the message size is less than the buffer size (It's finished)
-	return errorcode;
+	return ret;
 }
 
-//TODO: Change this to a stream input instead!
+int Networking::Server::GetNetState () {
+	char errbuf;
+	return recv(client_connect_socket_file_descriptor, &errbuf, 1, MSG_PEEK); 
+}
+
 void Networking::Server::SendClientMessage(const char* stream_buffer) {
 		write(client_connect_socket_file_descriptor, stream_buffer, strlen(stream_buffer));
 }

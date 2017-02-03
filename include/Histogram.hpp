@@ -21,7 +21,7 @@ class Histogram
 		
 		void insert_histogram_data (unsigned short* data, size_t data_length); 
 
-		void insert_histogram_data (Rect* image_ROI, Mat* image); 
+		void insert_histogram_data (cv::Rect* image_ROI, cv::Mat* image); 
 		
 		unsigned short take_percentile (int percentile);
 

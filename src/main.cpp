@@ -6,6 +6,8 @@
 #include <Saving.hpp>
 #include <SlidersTwo.hpp>
 #include <RealSense.hpp>
+#include <DummyCamera.hpp>
+#include <opencv2/opencv.hpp>
 
 int main (int argc, char** argv) {
 	//Command args
@@ -73,6 +75,7 @@ int main (int argc, char** argv) {
 	//TODO: Implement a better file saving system! Unordered maps with only ints cannot handle the serial numbers of the cameras
 	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
 
+	/*
 	Realsense* sensor = new Realsense( //TODO: Pass the entire sensor_save object into the class, and use it locally there (Maybe)
 			sensor_save["depth_width"		], 
 			sensor_save["depth_height"		],
@@ -81,6 +84,14 @@ int main (int argc, char** argv) {
 			sensor_save["bgr_height"		], 
 			sensor_save["bgr_framerate"	],
 			serial
+			); 
+			*/
+	
+	DummyCamera* sensor = new DummyCamera("./Picture.png",
+			sensor_save["depth_width"		], 
+			sensor_save["depth_height"		],
+			sensor_save["bgr_width"			],
+			sensor_save["bgr_height"		] 
 			); 
 
 	Saving* save_file = new Saving(argv[1], &saved_fields);
@@ -97,15 +108,18 @@ int main (int argc, char** argv) {
 
 	Networking::Server* serv = new Networking::Server(5806);			
 
+	cv::Mat display_out;
+	display_out = *sensor->bgrmatCV;
+
 	std::stringstream message_bus;
-	PegFinder* finder = new PegFinder(sensor, &message_bus, &saved_fields);
+	PegFinder* finder = new PegFinder(sensor, &saved_fields);
 	while(true) {
 		std::cout << "Waiting for client connection on port " << 5806 << std::endl;
 		serv->WaitForClientConnection();
-		while (serv->WaitForClientMessage(&std::cout)) {
-			message_bus.str("");
-			finder->ProcessFrame();
-			serv->SendClientMessage(message_bus.str().c_str());
+		while (serv->GetNetState()) {
+			std::cout << serv->WaitForClientMessage();
+			serv->SendClientMessage(finder->ProcessFrame().c_str());
+			cv::waitKey(10);
 		}
 		std::cout << "Connection stopped. Uh oh." << std::endl;
 	}
