@@ -1,3 +1,2 @@
-../release/RS_Vision ../Settings.json & 
-./setexposure.sh 30
-./testclient.sh
+./setexposure.sh 70
+../build/RS_Vision ../Settings.json 

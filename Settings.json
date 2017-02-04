@@ -5,7 +5,7 @@
         "show_overlays": 1,
         "show_rgb": 1,
         "show_sliders": 1,
-        "static_test": 1
+        "static_test": 0
     },
     "Imgproc_const": {
         "histogram_max": 10000,
@@ -15,20 +15,20 @@
     },
     "Sensor": {
         "bgr_framerate": 30,
-        "bgr_height": 1080,
-        "bgr_width": 1920,
+        "bgr_height": 480,
+        "bgr_width": 640,
         "depth_framerate": 30,
         "depth_height": 360,
         "depth_width": 480,
         "exposure": 30
     },
     "Sliders": {
-        "area_slider": 282,
-        "hue_slider_lower": 37,
+        "area_slider": 226,
+        "hue_slider_lower": 40,
         "hue_slider_upper": 179,
-        "sat_slider_lower": 193,
+        "sat_slider_lower": 97,
         "sat_slider_upper": 256,
-        "val_slider_lower": 0,
+        "val_slider_lower": 78,
         "val_slider_upper": 256
     },
     "Sliders_Limits": {
