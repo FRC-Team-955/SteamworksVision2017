@@ -42,8 +42,9 @@ std::string PegFinder::ProcessFrame() {
 		imshow("DEPTH", *video_interface->largeDepthCV * 6);
 	}
 
+	display_buffer = *video_interface->bgrmatCV;
+
 	cvtColor (*video_interface->rgbmatCV, raw_hsv_color, COLOR_BGR2HSV); // Convert to HSV colorspace
-	//TODO: Implement depth-hsv combination select. See notes/classification for more detail
 	inRange (raw_hsv_color,
 			Scalar ((*sliders_save)["hue_slider_lower"], (*sliders_save)["sat_slider_lower"], (*sliders_save)["val_slider_lower"]),
 			Scalar ((*sliders_save)["hue_slider_upper"], (*sliders_save)["sat_slider_upper"], (*sliders_save)["val_slider_upper"]),
@@ -51,7 +52,6 @@ std::string PegFinder::ProcessFrame() {
 	morphologyEx(hsv_range_mask, hsv_range_mask_filtered, MORPH_OPEN, morph_open_struct_element);
 
 
-	//TODO: Save file selections of outputs
 	if ((*application_options)["show_HSV"]) {
 		imshow("HSV_RANGE_SELECT", hsv_range_mask_filtered);
 	}
@@ -73,7 +73,7 @@ std::string PegFinder::ProcessFrame() {
 		//Check if it fits contour criteria (Area, and ROI width to height ratio)
 		//TODO: Set the tolerance from the save file!
 		if ( bounding_rectangle->area() >= (*sliders_save)["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.2) ) {
-			rectangle(*video_interface->bgrmatCV, *bounding_rectangle, Scalar(0, 255, 255), 2);
+			rectangle(display_buffer, *bounding_rectangle, Scalar(0, 255, 255), 2);
 
 			//Create a new stripe object
 			stripes.push_back(bounding_rectangle); 
@@ -114,24 +114,24 @@ std::string PegFinder::ProcessFrame() {
 			Rect right_hist_portion_Rect = goal_center_Rect; 
 
 			//TODO: Move these constants to variables in the save file
-			left_hist_portion_Rect.x  -= left_hist_portion_Rect.width  * 5;
+			left_hist_portion_Rect.x  -= left_hist_portion_Rect.width  * 6; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
 			right_hist_portion_Rect.x += right_hist_portion_Rect.width * 5;
 
 			left_hist_portion_Rect.width  += left_hist_portion_Rect.width  * 1;
 			right_hist_portion_Rect.width += right_hist_portion_Rect.width * 1;
 
 			if ((*application_options)["show_overlays"]) {
-				rectangle(*video_interface->bgrmatCV, goal_center_Rect, Scalar(255, 0, 0), 2);  
-				line(*video_interface->bgrmatCV, GetCenter(stripe_A), GetCenter(stripe_B), Scalar(0, 0, 255), 3, CV_AA); 
+				rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
+				line(display_buffer, GetCenter(stripe_A), GetCenter(stripe_B), Scalar(0, 0, 255), 3, CV_AA); 
 				//putText(*video_interface->bgrmatCV, std::to_string(best_score), stripe_B-> center, CV_FONT_HERSHEY_TRIPLEX, 5, Scalar(0, 0, 255)); 
 			}
 
-			rectangle(*video_interface->bgrmatCV, left_hist_portion_Rect, Scalar(255, 0, 255), 2);  
-			rectangle(*video_interface->bgrmatCV, right_hist_portion_Rect, Scalar(255, 0, 255), 2);  
+			rectangle(display_buffer, left_hist_portion_Rect, Scalar(255, 0, 255), 2);  
+			rectangle(display_buffer, right_hist_portion_Rect, Scalar(255, 0, 255), 2);  
 
 			histogram_goal_center->insert_histogram_data(&goal_center_Rect, video_interface->largeDepthCV);
-			histogram_goal_center->insert_histogram_data(&left_hist_portion_Rect, video_interface->largeDepthCV);
-			histogram_goal_center->insert_histogram_data(&right_hist_portion_Rect, video_interface->largeDepthCV);
+			hist_inner_roi_left->insert_histogram_data(&left_hist_portion_Rect, video_interface->largeDepthCV);
+			hist_inner_roi_right->insert_histogram_data(&right_hist_portion_Rect, video_interface->largeDepthCV);
 
 			//TODO: Move this to the save class instead
 			stream_doc.reset();
@@ -147,16 +147,17 @@ std::string PegFinder::ProcessFrame() {
 
 			int distance_to_screen_edge = (*video_interface_save)["bgr_width"] / 2;
 
+			//Eight and a quarter inches is how far apart the centers of the stripes should be, by spec
 			int eight_and_quarter_inches_in_px = PointDistance(GetCenter(stripe_A), GetCenter(stripe_B));
 			float px_per_inch = (float)eight_and_quarter_inches_in_px / 8.25; 
 
 			//Left and right center x positions in inches 
-			float x_center_left_Rect_inch = x_center_left_Rect / px_per_inch;
-			float x_center_right_Rect_inch = x_center_right_Rect / px_per_inch;
+			float x_center_left_Rect_inch		 = x_center_left_Rect	 / px_per_inch;
+			float x_center_right_Rect_inch	 = x_center_right_Rect / px_per_inch;
 
 			//Left and right center depths in inches
-			float depth_left_Rect_inch = (float)depth_left_Rect * 0.0393701f;
-			float depth_right_Rect_inch = (float)depth_right_Rect * 0.0393701f;
+			float depth_left_Rect_inch 	= 	(float)depth_left_Rect 	* 0.0393701f;
+			float depth_right_Rect_inch 	= 	(float)depth_right_Rect * 0.0393701f;
 
 			float depth_x_slope = (float)(depth_right_Rect_inch - depth_left_Rect_inch) / (float)(x_center_right_Rect_inch - x_center_left_Rect_inch); 
 
@@ -166,7 +167,7 @@ std::string PegFinder::ProcessFrame() {
 			float angle = (atanf(depth_x_slope) * 180.0f) / PI;
 
 			//TODO: Time stamping!
-			//if (depth > 0 && depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
+			if (depth > 0 && depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
 				//root_node.append_attribute("distance_to_target") = depth; 
 				//root_node.append_attribute("slope_depth") = depth_x_slope;
 				//root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
@@ -182,12 +183,13 @@ std::string PegFinder::ProcessFrame() {
 				std::cout << "     x right center depth inch: " << depth_right_Rect_inch << std::endl;
 				std::cout << "      center depth offsets: " << fabs(depth_right_Rect_inch - depth_left_Rect_inch) << std::endl;
 				std::cout << "       depth_x_slope: " << depth_x_slope << std::endl;
+				std::cout << "        mag x px: " << magnitude_x_inch << std::endl;
 				//TODO: Yuck
 				std::stringstream ss;
 				stream_doc.save(ss);
 				ret = ss.str();
 				//*output_ss << "timestamp: " << video_interface<< std::endl;
-			//}
+			}
 		}
 	}
 
@@ -197,7 +199,7 @@ std::string PegFinder::ProcessFrame() {
 
 	//TODO: Make another mat to display on instead of writing over the video_interface's mat
 	if ((*application_options)["show_rgb"]) {
-		imshow("COLOR", *video_interface->bgrmatCV);
+		imshow("COLOR", display_buffer);
 	}
 	return ret;
 }

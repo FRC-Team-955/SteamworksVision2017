@@ -24,7 +24,7 @@
     },
     "Sliders": {
         "area_slider": 282,
-        "hue_slider_lower": 63,
+        "hue_slider_lower": 37,
         "hue_slider_upper": 179,
         "sat_slider_lower": 193,
         "sat_slider_upper": 256,

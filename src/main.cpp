@@ -133,7 +133,6 @@ void TestMode(char* rgb_directory, char* depth_directory) {
 
 	while(true) {
 		sensor->GrabFrames();
-		std::cout << "Top Left: " << sensor->largeDepthCV->at<unsigned short> (500,500) << std::endl;
 		std::cout << finder->ProcessFrame() << std::endl;
 		cv::waitKey(10);
 	}
@@ -155,7 +154,7 @@ int main (int argc, char** argv) {
 		if (argc < 4) {
 			std::cerr << "Test mode active, requires 2 additional arguements." << 
 				"\nUsage" << 
-				"\n\t" << argv[0] << " <Setings.json> <RGB.png> <Depth.exr>" << std::endl;
+				"\n\t" << argv[0] << " <Settings.json> <RGB.png> <Depth.exr>" << std::endl;
 			return -1;
 		}
 	}

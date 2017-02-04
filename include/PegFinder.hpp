@@ -34,6 +34,8 @@ class PegFinder {
 		Mat morph_open_struct_element;
 
 		Mat hsv_range_mask_filtered; 
+		
+		Mat display_buffer; 
 
 		std::vector< std::vector <Point> > contours;
 

@@ -46,8 +46,6 @@ unsigned short Histogram::take_percentile (int percentile) {
 	int percentile_max = ceil ( (float) percentile / 100.0f * (float) data_sum);
 	size_t bin_number = 0;
 
-	std::cout << "MAX: " << percentile_max << std::endl;
-
 	while (accumulator < percentile_max) {
 		accumulator += *histogram_start_copy;
 		histogram_start_copy++;

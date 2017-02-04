@@ -19,10 +19,10 @@ class Histogram
 		size_t min, max;
 		Histogram (int min, int max);
 		
-		void insert_histogram_data (unsigned short* data, size_t data_length); 
+		void insert_histogram_data (unsigned short* data, size_t data_length);
 
 		void insert_histogram_data (cv::Rect* image_ROI, cv::Mat* image); 
-		
+
 		unsigned short take_percentile (int percentile);
 
 		~Histogram();
