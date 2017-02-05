@@ -127,7 +127,7 @@ std::string PegFinder::ProcessFrame() {
 			}
 
 			rectangle(display_buffer, left_hist_portion_Rect, Scalar(255, 0, 255), 2);  
-			rectangle(display_buffer, right_hist_portion_Rect, Scalar(255, 0, 255), 2);  
+			rectangle(display_buffer, right_hist_portion_Rect, Scalar(255,0, 255), 2);  
 
 			histogram_goal_center->insert_histogram_data(&goal_center_Rect, video_interface->largeDepthCV);
 			hist_inner_roi_left->insert_histogram_data(&left_hist_portion_Rect, video_interface->largeDepthCV);
