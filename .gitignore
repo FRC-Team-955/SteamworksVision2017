@@ -2,6 +2,7 @@ vimsession.vim
 .ycm_extra_conf.py
 debug
 release
+build
 *.blend1
 *.exr
 *.png

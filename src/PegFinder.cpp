@@ -114,11 +114,11 @@ std::string PegFinder::ProcessFrame() {
 			Rect right_hist_portion_Rect = goal_center_Rect; 
 
 			//TODO: Move these constants to variables in the save file
-			left_hist_portion_Rect.x  -= left_hist_portion_Rect.width  * 6; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
-			right_hist_portion_Rect.x += right_hist_portion_Rect.width * 5;
+			left_hist_portion_Rect.x  -= left_hist_portion_Rect.width  * 1.5; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
+			right_hist_portion_Rect.x += right_hist_portion_Rect.width * 1.5;
 
-			left_hist_portion_Rect.width  += left_hist_portion_Rect.width  * 1;
-			right_hist_portion_Rect.width += right_hist_portion_Rect.width * 1;
+			//left_hist_portion_Rect.width  += left_hist_portion_Rect.width  * 1;
+			//right_hist_portion_Rect.width += right_hist_portion_Rect.width * 1;
 
 			if ((*application_options)["show_overlays"]) {
 				rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
@@ -167,13 +167,13 @@ std::string PegFinder::ProcessFrame() {
 			float angle = (atanf(depth_x_slope) * 180.0f) / PI;
 
 			//TODO: Time stamping!
-			if (depth > 0 && depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
-				//root_node.append_attribute("distance_to_target") = depth; 
+			//if (depth > 0 && depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
+				root_node.append_attribute("distance_to_target") = depth; 
 				//root_node.append_attribute("slope_depth") = depth_x_slope;
 				//root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
 				//root_node.append_attribute("slope_height") = (float)(GetCenter(stripe_A).y - GetCenter(stripe_B).y) / (float)(GetCenter(stripe_A).x - GetCenter(stripe_B).x);
 				//root_node.append_attribute("x_magnitude_inch") = magnitude_x_inch; 
-				//root_node.append_attribute("angle") = angle; 
+				root_node.append_attribute("angle") = angle; 
 				//stream_doc.save(*output_ss); 
 				std::cout << "angle: " << angle << std::endl;
 				std::cout << " x left center offset inch: " << x_center_left_Rect_inch << std::endl;
@@ -189,7 +189,7 @@ std::string PegFinder::ProcessFrame() {
 				stream_doc.save(ss);
 				ret = ss.str();
 				//*output_ss << "timestamp: " << video_interface<< std::endl;
-			}
+			//}
 		}
 	}
 
