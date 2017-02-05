@@ -12,6 +12,7 @@
 #include <pugixml.hpp>
 #include <math.h>
 #include <MiscImgproc.hpp>
+#include <StripeMatcher.hpp>
 
 #define PI 3.14159265
 
@@ -25,6 +26,7 @@ class PegFinder {
 		Histogram* histogram_goal_center;
 		Histogram* hist_inner_roi_left;
 		Histogram* hist_inner_roi_right;
+		StripeMatcher* matcher;	
 
 		//Create matrices/kernels
 		Mat raw_hsv_color; 

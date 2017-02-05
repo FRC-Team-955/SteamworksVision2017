@@ -5,7 +5,7 @@
         "show_overlays": 1,
         "show_rgb": 1,
         "show_sliders": 1,
-        "static_test": 0
+        "static_test": 1
     },
     "Imgproc_const": {
         "histogram_max": 10000,
@@ -38,6 +38,15 @@
         "sat_slider_lower": 256,
         "sat_slider_upper": 256,
         "val_slider_lower": 256,
+        "val_slider_upper": 256
+    },
+    "Sliders_Peg": {
+        "area_slider": 5000,
+        "hue_slider_lower": 0,
+        "hue_slider_upper": 109,
+        "sat_slider_lower": 172,
+        "sat_slider_upper": 256,
+        "val_slider_lower": 152,
         "val_slider_upper": 256
     }
 }

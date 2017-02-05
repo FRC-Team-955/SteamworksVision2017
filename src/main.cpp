@@ -14,8 +14,8 @@ std::unordered_map<std::string, std::unordered_map<std::string, int>*> saved_fie
 std::unordered_map<std::string, int> application_options;
 std::unordered_map<std::string, int> imgproc_save;
 std::unordered_map<std::string, int> sensor_save;
-std::unordered_map<std::string, int> sliders_save_limits;
-std::unordered_map<std::string, int> sliders_save;
+std::unordered_map<std::string, int> sliders_save_peg_limits;
+std::unordered_map<std::string, int> sliders_save_peg;
 char* save_file_dir;
 Saving* save_file;
 Sliders* interface;
@@ -23,7 +23,7 @@ VideoInterface* sensor;
 
 void InitializeSaveFile () {
 	//File saving fields
-	sliders_save  = {  
+	sliders_save_peg  = {  
 		{"hue_slider_lower"	,	179	}, 
 		{"hue_slider_upper"	,	179	},
 		{"sat_slider_lower"	,	256	},
@@ -33,7 +33,7 @@ void InitializeSaveFile () {
 		{"area_slider"			,	5000	}
 	};
 
-	sliders_save_limits  = {  
+	sliders_save_peg_limits  = {  
 		{"hue_slider_lower"	,	179	}, 
 		{"hue_slider_upper"	,	179	},
 		{"sat_slider_lower"	,	256	},
@@ -70,8 +70,8 @@ void InitializeSaveFile () {
 	}; 
 
 	saved_fields = {
-		{"Sliders_Limits"				, &sliders_save_limits		},
-		{"Sliders"						, &sliders_save				},
+		{"Sliders_Limits"				, &sliders_save_peg_limits		},
+		{"Sliders_Peg"					, &sliders_save_peg				},
 		{"Imgproc_const"				, &imgproc_save				},
 		{"Application_Options"		, &application_options		},
 		{"Sensor"						, &sensor_save	 				}  
@@ -159,7 +159,7 @@ int main (int argc, char** argv) {
 		}
 	}
 
-	Sliders* interface = new Sliders("Peg_Finder_Sliders", &sliders_save, &sliders_save_limits, save_file); 
+	Sliders* interface = new Sliders("Peg_Finder_Sliders", &sliders_save_peg, &sliders_save_peg_limits, save_file); 
 
 	if (application_options["show_sliders"]) {
 		interface->InitializeSliders();
