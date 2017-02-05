@@ -9,16 +9,25 @@
 #include <DummyCamera.hpp>
 #include <opencv2/opencv.hpp>
 
+using SaveEntry = std::unordered_map<std::string, int>;
 
-std::unordered_map<std::string, std::unordered_map<std::string, int>*> saved_fields;
-std::unordered_map<std::string, int> application_options;
-std::unordered_map<std::string, int> imgproc_save;
-std::unordered_map<std::string, int> sensor_save;
-std::unordered_map<std::string, int> sliders_save_peg_limits;
-std::unordered_map<std::string, int> sliders_save_peg;
+std::unordered_map<std::string, SaveEntry*> saved_fields;
+
+SaveEntry application_options;
+SaveEntry imgproc_save_peg;
+SaveEntry imgproc_save_boiler;
+SaveEntry video_interface_save;
+SaveEntry sliders_save_peg_limits;
+SaveEntry sliders_save_boiler_limits;
+SaveEntry sliders_save_peg;
+SaveEntry sliders_save_boiler;
+
 char* save_file_dir;
 Saving* save_file;
-Sliders* interface;
+
+Sliders* interface_peg;
+Sliders* interface_boiler;
+
 VideoInterface* sensor;
 
 void InitializeSaveFile () {
@@ -30,7 +39,7 @@ void InitializeSaveFile () {
 		{"sat_slider_upper"	,	256	},
 		{"val_slider_lower"	,	256	},
 		{"val_slider_upper"	,	256	},
-		{"area_slider"			,	5000	}
+		{"area_slider"			,	0		}
 	};
 
 	sliders_save_peg_limits  = {  
@@ -43,7 +52,27 @@ void InitializeSaveFile () {
 		{"area_slider"			,	5000	}
 	};
 
-	sensor_save = { 
+	sliders_save_boiler  = {  
+		{"hue_slider_lower"	,	179	}, 
+		{"hue_slider_upper"	,	179	},
+		{"sat_slider_lower"	,	256	},
+		{"sat_slider_upper"	,	256	},
+		{"val_slider_lower"	,	256	},
+		{"val_slider_upper"	,	256	},
+		{"area_slider"			,	0		}
+	};
+
+	sliders_save_boiler_limits  = {  
+		{"hue_slider_lower"	,	179	}, 
+		{"hue_slider_upper"	,	179	},
+		{"sat_slider_lower"	,	256	},
+		{"sat_slider_upper"	,	256	},
+		{"val_slider_lower"	,	256	},
+		{"val_slider_upper"	,	256	},
+		{"area_slider"			,	5000	}
+	};
+
+	video_interface_save = { 
 		{"depth_width"			,	480	}, 
 		{"depth_height"		,	360	}, 
 		{"depth_framerate"	,	30		}, 
@@ -53,16 +82,24 @@ void InitializeSaveFile () {
 		{"exposure"				,	30		} 
 	}; 
 
-	imgproc_save = {
-		{"morph_open"				,	5			},
-		{"histogram_min"			,	0			}, 
-		{"histogram_max"			,	500		},
-		{"histogram_percentile"	,	10			} 
+	imgproc_save_peg = {
+		{"morph_open"				,	5		},
+		{"histogram_min"			,	0		}, 
+		{"histogram_max"			,	50000	},
+		{"histogram_percentile"	,	10		} 
+	};
+
+	imgproc_save_boiler = {
+		{"morph_open"				,	5		},
+		{"histogram_min"			,	0		}, 
+		{"histogram_max"			,	50000	},
+		{"histogram_percentile"	,	10		} 
 	};
 
 	application_options = {
 		{"static_test"				,	0	}, 
-		{"show_sliders"			,	1	}, 
+		{"show_sliders_peg"		,	1	}, 
+		{"show_sliders_boiler"	,	1	}, 
 		{"show_rgb"					,	1	}, 
 		{"show_depth"				,	1	}, 
 		{"show_HSV"					,	1	}, 
@@ -70,11 +107,14 @@ void InitializeSaveFile () {
 	}; 
 
 	saved_fields = {
-		{"Sliders_Limits"				, &sliders_save_peg_limits		},
+		{"Sliders_Limits_Peg"		, &sliders_save_peg_limits		},
+		{"Sliders_Limits_Boiler"	, &sliders_save_boiler_limits	},
 		{"Sliders_Peg"					, &sliders_save_peg				},
-		{"Imgproc_const"				, &imgproc_save				},
-		{"Application_Options"		, &application_options		},
-		{"Sensor"						, &sensor_save	 				}  
+		{"Sliders_Boiler"				, &sliders_save_boiler			},
+		{"Imgproc_const_Peg"			, &imgproc_save_peg				},
+		{"Imgproc_const_Boiler"		, &imgproc_save_boiler			},
+		{"Application_Options"		, &application_options			},
+		{"Sensor"						, &video_interface_save	 					}  
 	};
 
 	save_file = new Saving(save_file_dir, &saved_fields);
@@ -90,13 +130,13 @@ void InitializeSaveFile () {
 void ServerMode() {
 	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
 
-	sensor = new Realsense( //TODO: Pass the entire sensor_save object into the class, and use it locally there (Maybe)
-			sensor_save["depth_width"		], 
-			sensor_save["depth_height"		],
-			sensor_save["depth_framerate"	],
-			sensor_save["bgr_width"			],
-			sensor_save["bgr_height"		], 
-			sensor_save["bgr_framerate"	],
+	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
+			video_interface_save["depth_width"		], 
+			video_interface_save["depth_height"		],
+			video_interface_save["depth_framerate"	],
+			video_interface_save["bgr_width"			],
+			video_interface_save["bgr_height"		], 
+			video_interface_save["bgr_framerate"	],
 			serial
 			); 
 
@@ -105,7 +145,15 @@ void ServerMode() {
 	cv::Mat display_out;
 	display_out = *sensor->bgrmatCV;
 
-	PegFinder* finder = new PegFinder(sensor, &saved_fields);
+	PegFinder* finder = new PegFinder(
+			sensor							, 
+			&sliders_save_peg				,	
+			&sliders_save_peg_limits	,	
+			&imgproc_save_peg				,	
+			&application_options			,	
+			&video_interface_save	
+			);
+
 	while(true) {
 		std::cout << "Waiting for client connection on port " << 5806 << std::endl;
 		serv->WaitForClientConnection();
@@ -123,13 +171,20 @@ void TestMode(char* rgb_directory, char* depth_directory) {
 	sensor = new DummyCamera(
 			rgb_directory,
 			depth_directory,
-			sensor_save["depth_width"		], 
-			sensor_save["depth_height"		],
-			sensor_save["bgr_width"			],
-			sensor_save["bgr_height"		] 
+			video_interface_save["depth_width"	], 
+			video_interface_save["depth_height"	],
+			video_interface_save["bgr_width"		],
+			video_interface_save["bgr_height"	] 
 			); 
 
-	PegFinder* finder = new PegFinder(sensor, &saved_fields);
+	PegFinder* finder = new PegFinder(
+			sensor							, 
+			&sliders_save_peg				,	
+			&sliders_save_peg_limits	,	
+			&imgproc_save_peg				,	
+			&application_options			,	
+			&video_interface_save	
+			);
 
 	while(true) {
 		sensor->GrabFrames();
@@ -159,12 +214,19 @@ int main (int argc, char** argv) {
 		}
 	}
 
-	Sliders* interface = new Sliders("Peg_Finder_Sliders", &sliders_save_peg, &sliders_save_peg_limits, save_file); 
+	Sliders* interface_peg = new Sliders("Peg_Finder_Sliders", &sliders_save_peg, &sliders_save_peg_limits, save_file); 
+	Sliders* interface_boiler = new Sliders("Boiler_Finder_Sliders", &sliders_save_boiler, &sliders_save_boiler_limits, save_file); 
 
-	if (application_options["show_sliders"]) {
-		interface->InitializeSliders();
+	if (application_options["show_sliders_peg"]) {
+		interface_peg->InitializeSliders();
 	}
-	interface->UpdateSliders();
+
+	if (application_options["show_sliders_boiler"]) {
+		interface_boiler->InitializeSliders();
+	}
+
+	interface_peg->UpdateSliders();
+	interface_boiler->UpdateSliders();
 
 	if (application_options["static_test"] == 1) {
 		TestMode(argv[2], argv[3]);

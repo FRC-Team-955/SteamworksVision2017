@@ -1,13 +1,21 @@
 #include <PegFinder.hpp>
 
-PegFinder::PegFinder(VideoInterface* video_interface, std::unordered_map<std::string, std::unordered_map<std::string, int>*>* saved_fields ) {
+PegFinder::PegFinder(VideoInterface* video_interface,
+		SaveEntry *sliders_save				,	
+		SaveEntry *sliders_limits			,	
+		SaveEntry *imgproc_save				,	
+		SaveEntry *application_options	,	
+		SaveEntry *video_interface_save	
+		) {
+
 	this->video_interface = video_interface;
+	this->sliders_save				=	sliders_save		 	; 
+	this->sliders_limits				=	sliders_limits		 	; 	
+	this->imgproc_save				=	imgproc_save		 	; 
+	this->application_options		=	application_options	; 
+	this->video_interface_save		=	video_interface_save	;
 
 	//TODO: Ewwww
-	sliders_save				= (*saved_fields)["Sliders_Peg"				];						
-	imgproc_save				= (*saved_fields)["Imgproc_const"			];		
-	application_options		= (*saved_fields)["Application_Options"	];		
-	video_interface_save	 	= (*saved_fields)["Sensor"						];	 
 
 	//Object initialization
 	histogram_goal_center = new Histogram((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
@@ -139,15 +147,15 @@ std::string PegFinder::ProcessFrame() {
 		//root_node.append_attribute("x_magnitude_inch") = magnitude_x_inch; 
 		root_node.append_attribute("angle") = angle; 
 		//stream_doc.save(*output_ss); 
-		//std::cout << "angle: " << angle << std::endl;
-		//std::cout << " x left center offset inch: " << x_center_left_Rect_inch << std::endl;
-		//std::cout << "  x right center offset inch: " << x_center_right_Rect_inch << std::endl;
-		//std::cout << "   center x offsets: " << fabs(x_center_right_Rect_inch - x_center_left_Rect_inch) << std::endl;
-		//std::cout << "    x left center depth inch: " << depth_left_Rect_inch << std::endl;
-		//std::cout << "     x right center depth inch: " << depth_right_Rect_inch << std::endl;
-		//std::cout << "      center depth offsets: " << fabs(depth_right_Rect_inch - depth_left_Rect_inch) << std::endl;
-		//std::cout << "       depth_x_slope: " << depth_x_slope << std::endl;
-		//std::cout << "        mag x px: " << magnitude_x_inch << std::endl;
+		std::cout << "angle: " << angle << std::endl;
+		std::cout << " x left center offset inch: " << x_center_left_Rect_inch << std::endl;
+		std::cout << "  x right center offset inch: " << x_center_right_Rect_inch << std::endl;
+		std::cout << "   center x offsets: " << fabs(x_center_right_Rect_inch - x_center_left_Rect_inch) << std::endl;
+		std::cout << "    x left center depth inch: " << depth_left_Rect_inch << std::endl;
+		std::cout << "     x right center depth inch: " << depth_right_Rect_inch << std::endl;
+		std::cout << "      center depth offsets: " << fabs(depth_right_Rect_inch - depth_left_Rect_inch) << std::endl;
+		std::cout << "       depth_x_slope: " << depth_x_slope << std::endl;
+		std::cout << "        mag x px: " << magnitude_x_inch << std::endl;
 		//TODO: Yuck
 		std::stringstream ss;
 		stream_doc.save(ss);

@@ -18,6 +18,7 @@
 
 using namespace cv;
 using namespace MiscImgproc;
+using SaveEntry = std::unordered_map<std::string, int>;
 
 class PegFinder {
 	private:
@@ -47,16 +48,22 @@ class PegFinder {
 		pugi::xml_document stream_doc; //For serialising to the RIO
 
 		//TODO: FIND A BETTER WAY TO DO THIS
-		std::unordered_map<std::string, int> *sliders_save				;	
-		std::unordered_map<std::string, int> *sliders_limits			;	
-		std::unordered_map<std::string, int> *imgproc_save				;	
-		std::unordered_map<std::string, int> *application_options	;	
-		std::unordered_map<std::string, int> *video_interface_save	;	
+		SaveEntry *sliders_save				;	
+		SaveEntry *sliders_limits			;	
+		SaveEntry *imgproc_save				;	
+		SaveEntry *application_options	;	
+		SaveEntry *video_interface_save	;	
 
 		float ScoreStripePair (Rect* stripe_A, Rect* stripe_B, float x_bias, float y_bias);
 
 	public:
-		PegFinder(VideoInterface* video_interface, std::unordered_map<std::string, std::unordered_map<std::string, int>*>* saved_fields );
+		PegFinder(VideoInterface* video_interface,
+				SaveEntry *sliders_save				,	
+				SaveEntry *sliders_limits			,	
+				SaveEntry *imgproc_save				,	
+				SaveEntry *application_options	,	
+				SaveEntry *video_interface_save	
+				) ;
 
 		std::string ProcessFrame();
 

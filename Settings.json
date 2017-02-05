@@ -1,37 +1,53 @@
 {
     "Application_Options": {
         "show_HSV": 1,
-        "show_depth": 1,
+        "show_depth": 0,
         "show_overlays": 1,
         "show_rgb": 1,
-        "show_sliders": 1,
+        "show_sliders_boiler": 0,
+        "show_sliders_peg": 1,
         "static_test": 1
     },
-    "Imgproc_const": {
-        "histogram_max": 10000,
+    "Imgproc_const_Boiler": {
+        "histogram_max": 50000,
+        "histogram_min": 0,
+        "histogram_percentile": 10,
+        "morph_open": 5
+    },
+    "Imgproc_const_Peg": {
+        "histogram_max": 50000,
         "histogram_min": 0,
         "histogram_percentile": 10,
         "morph_open": 5
     },
     "Sensor": {
         "bgr_framerate": 30,
-        "bgr_height": 480,
-        "bgr_width": 640,
+        "bgr_height": 1080,
+        "bgr_width": 1920,
         "depth_framerate": 30,
         "depth_height": 360,
         "depth_width": 480,
         "exposure": 30
     },
-    "Sliders": {
-        "area_slider": 226,
-        "hue_slider_lower": 40,
+    "Sliders_Boiler": {
+        "area_slider": 5000,
+        "hue_slider_lower": 179,
         "hue_slider_upper": 179,
-        "sat_slider_lower": 97,
+        "sat_slider_lower": 256,
         "sat_slider_upper": 256,
-        "val_slider_lower": 78,
+        "val_slider_lower": 256,
         "val_slider_upper": 256
     },
-    "Sliders_Limits": {
+    "Sliders_Limits_Boiler": {
+        "area_slider": 5000,
+        "hue_slider_lower": 179,
+        "hue_slider_upper": 179,
+        "sat_slider_lower": 256,
+        "sat_slider_upper": 256,
+        "val_slider_lower": 256,
+        "val_slider_upper": 256
+    },
+    "Sliders_Limits_Peg": {
         "area_slider": 5000,
         "hue_slider_lower": 179,
         "hue_slider_upper": 179,
@@ -41,12 +57,12 @@
         "val_slider_upper": 256
     },
     "Sliders_Peg": {
-        "area_slider": 5000,
-        "hue_slider_lower": 0,
-        "hue_slider_upper": 109,
-        "sat_slider_lower": 172,
+        "area_slider": 557,
+        "hue_slider_lower": 55,
+        "hue_slider_upper": 64,
+        "sat_slider_lower": 140,
         "sat_slider_upper": 256,
-        "val_slider_lower": 152,
+        "val_slider_lower": 87,
         "val_slider_upper": 256
     }
 }

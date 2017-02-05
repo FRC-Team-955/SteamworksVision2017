@@ -43,7 +43,6 @@ bool StripeMatcher::FindPair (std::vector<cv::Rect*>* stripe_list, cv::Rect*& st
 	} else {
 		return false;
 	}
-	std::cout << (stripe_out_A && stripe_out_B) << std::endl;
 	return true;
 }
 
