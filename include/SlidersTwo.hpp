@@ -9,6 +9,7 @@
 #include "Saving.hpp"
 
 using namespace cv;
+using SaveEntry = std::unordered_map<std::string, int>;
 
 class Sliders {
 	private:
@@ -16,8 +17,8 @@ class Sliders {
 
 		const char* window_title;
 
-		std::unordered_map<std::string, int> *sliders;
-		std::unordered_map<std::string, int> *sliders_limits;
+		SaveEntry *sliders;
+		SaveEntry *sliders_limits;
 	
 		//TODO: Use a better solution, or at least use std::shared_ptr to make it deallocate at the right time :P
 		Saving* save_object; //For the on_trackbar save callback
@@ -25,7 +26,7 @@ class Sliders {
 	public:
 		std::unordered_map<char*, int> save_file;
 
-		Sliders(const char* window_title, std::unordered_map<std::string, int> *sliders,std::unordered_map<std::string, int> *sliders_max, Saving* save_object);
+		Sliders(const char* window_title, SaveEntry *sliders,SaveEntry *sliders_max, Saving* save_object);
 
 		void InitializeSliders ();
 

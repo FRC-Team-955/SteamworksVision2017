@@ -7,7 +7,7 @@ void Realsense::GrabFrames () {
 		dev->wait_for_frames();
 
 		if (!dev->is_streaming()) {
-			std::cout << "[ ERROR ] Streaming stopped" << std::endl;
+			std::cerr << "[ ERROR ] Streaming stopped" << std::endl;
 		}
 
 		depthmatCV->data = (unsigned char*)dev->get_frame_data(rs::stream::depth);
@@ -15,7 +15,7 @@ void Realsense::GrabFrames () {
 		cvtColor(*rgbmatCV, *bgrmatCV, CV_RGB2BGR);
 		largeDepthCV->data = (unsigned char*)dev->get_frame_data(rs::stream::depth_aligned_to_color);
 	} else {
-		std::cout << "[ ERROR ] No devices connected! " << std::endl;
+		std::cerr << "[ ERROR ] No devices connected! " << std::endl;
 	}
 }
 

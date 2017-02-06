@@ -114,7 +114,7 @@ void InitializeSaveFile () {
 		{"Imgproc_const_Peg"			, &imgproc_save_peg				},
 		{"Imgproc_const_Boiler"		, &imgproc_save_boiler			},
 		{"Application_Options"		, &application_options			},
-		{"Sensor"						, &video_interface_save	 					}  
+		{"Sensor"						, &video_interface_save	 		}  
 	};
 
 	save_file = new Saving(save_file_dir, &saved_fields);
@@ -155,14 +155,14 @@ void ServerMode() {
 			);
 
 	while(true) {
-		std::cout << "Waiting for client connection on port " << 5806 << std::endl;
+		std::cerr << "Waiting for client connection on port " << 5806 << std::endl;
 		serv->WaitForClientConnection();
 		while (serv->GetNetState()) {
-			std::cout << serv->WaitForClientMessage();
+			std::cerr << serv->WaitForClientMessage();
 			serv->SendClientMessage(finder->ProcessFrame().c_str());
 			cv::waitKey(10);
 		}
-		std::cout << "Connection stopped. Uh oh." << std::endl;
+		std::cerr << "Connection stopped. Uh oh." << std::endl;
 	}
 
 }

@@ -9,15 +9,16 @@
 #include <pugixml.hpp> 
 
 using json = nlohmann::json;
+using SaveEntry = std::unordered_map<std::string, int>;
 
 class Saving {
 	private:
-		std::unordered_map<std::string, std::unordered_map<std::string, int> *>* load_maps;
+		std::unordered_map<std::string, SaveEntry *>* load_maps;
 		std::string directory;
 		json save_json;
 		pugi::xml_document save_xml;
 	public:
-		Saving(std::string directory, std::unordered_map<std::string, std::unordered_map<std::string, int> *>* load_maps);
+		Saving(std::string directory, std::unordered_map<std::string, SaveEntry *>* load_maps);
 
 		void SaveJSON ();
 

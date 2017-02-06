@@ -4,7 +4,7 @@
 
 #include "Saving.hpp"
 
-Saving::Saving(std::string directory, std::unordered_map<std::string, std::unordered_map<std::string, int> *>* load_maps) {
+Saving::Saving(std::string directory, std::unordered_map<std::string, SaveEntry *>* load_maps) {
 	this->directory = directory;
 	this->load_maps = load_maps;
 }
