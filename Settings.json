@@ -6,7 +6,7 @@
         "show_rgb": 1,
         "show_sliders_boiler": 0,
         "show_sliders_peg": 1,
-        "static_test": 2
+        "static_test": 1
     },
     "Imgproc_const_Boiler": {
         "histogram_max": 50000,
@@ -57,12 +57,12 @@
         "val_slider_upper": 256
     },
     "Sliders_Peg": {
-        "area_slider": 4825,
-        "hue_slider_lower": 59,
-        "hue_slider_upper": 99,
-        "sat_slider_lower": 61,
+        "area_slider": 113,
+        "hue_slider_lower": 40,
+        "hue_slider_upper": 79,
+        "sat_slider_lower": 144,
         "sat_slider_upper": 256,
-        "val_slider_lower": 124,
+        "val_slider_lower": 164,
         "val_slider_upper": 256
     }
 }

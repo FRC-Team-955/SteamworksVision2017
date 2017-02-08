@@ -1,5 +1,5 @@
 #include "Histogram.hpp"
-
+//TODO: Make this a template class
 void Histogram::clear_histogram() {
 	memset (histogram, 0, sizeof (unsigned short) * range);
 	data_sum = 0;

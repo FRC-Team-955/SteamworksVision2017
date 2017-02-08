@@ -26,6 +26,7 @@ class Median
 			this->default_value = default_value;
 		}
 
+		//TODO: Make this a pointer
 		void insert_median_data (T data) {
 			median_stack.push_front (data);
 
