@@ -25,9 +25,9 @@ class PegFinder {
 	private:
 		//Runtime objects
 		VideoInterface* video_interface; 
-		Histogram* histogram_goal_center;
-		Histogram* hist_inner_roi_left;
-		Histogram* hist_inner_roi_right;
+		Histogram<unsigned short>* histogram_goal_center;
+		Histogram<unsigned short>* hist_inner_roi_left;
+		Histogram<unsigned short>* hist_inner_roi_right;
 		StripeMatcher* matcher;	
 		Median<float>* distance_median;
 		Median<float>* angle_median;

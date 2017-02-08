@@ -15,12 +15,10 @@ PegFinder::PegFinder(VideoInterface* video_interface,
 	this->application_options		=	application_options	; 
 	this->video_interface_save		=	video_interface_save	;
 
-	//TODO: Ewwww
-
 	//Object initialization
-	histogram_goal_center = new Histogram((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
-	hist_inner_roi_left = new Histogram((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
-	hist_inner_roi_right = new Histogram((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
+	histogram_goal_center = new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
+	hist_inner_roi_left = new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
+	hist_inner_roi_right = new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
 
 	matcher = new StripeMatcher (1, 100);
 
