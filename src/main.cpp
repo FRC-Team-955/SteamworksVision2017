@@ -84,14 +84,14 @@ void InitializeSaveFile () {
 
 	imgproc_save_peg = {
 		{"morph_open"				,	5		},
-		{"histogram_min"			,	0		}, 
+		{"histogram_min"			,	1		}, 
 		{"histogram_max"			,	50000	},
 		{"histogram_percentile"	,	10		} 
 	};
 
 	imgproc_save_boiler = {
 		{"morph_open"				,	5		},
-		{"histogram_min"			,	0		}, 
+		{"histogram_min"			,	1		}, 
 		{"histogram_max"			,	50000	},
 		{"histogram_percentile"	,	10		} 
 	};
@@ -167,7 +167,7 @@ void ServerMode() {
 
 }
 
-void TestMode(char* rgb_directory, char* depth_directory) {
+void TestStatic(char* rgb_directory, char* depth_directory) {
 	sensor = new DummyCamera(
 			rgb_directory,
 			depth_directory,
@@ -192,6 +192,37 @@ void TestMode(char* rgb_directory, char* depth_directory) {
 		cv::waitKey(10);
 	}
 }
+
+void TestLive() {
+char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
+
+	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
+			video_interface_save["depth_width"		], 
+			video_interface_save["depth_height"		],
+			video_interface_save["depth_framerate"	],
+			video_interface_save["bgr_width"			],
+			video_interface_save["bgr_height"		], 
+			video_interface_save["bgr_framerate"	],
+			serial
+			); 
+
+	PegFinder* finder = new PegFinder(
+			sensor							, 
+			&sliders_save_peg				,	
+			&sliders_save_peg_limits	,	
+			&imgproc_save_peg				,	
+			&application_options			,	
+			&video_interface_save	
+			);
+
+	while(true) {
+		sensor->GrabFrames();
+		std::cout << finder->ProcessFrame() << std::endl;
+		cv::waitKey(10);
+	}
+}
+
+
 
 int main (int argc, char** argv) {
 	//Command args
@@ -228,10 +259,14 @@ int main (int argc, char** argv) {
 	interface_peg->UpdateSliders();
 	interface_boiler->UpdateSliders();
 
-	if (application_options["static_test"] == 1) {
-		TestMode(argv[2], argv[3]);
-	} else {
-		ServerMode();
+	switch (application_options["static_test"]) {
+		case 2:
+			TestLive();
+		case 1:
+			TestStatic(argv[2], argv[3]);
+		default:
+			ServerMode();
+			break;
 	}
 
 }

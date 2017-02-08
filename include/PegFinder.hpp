@@ -13,6 +13,7 @@
 #include <math.h>
 #include <MiscImgproc.hpp>
 #include <StripeMatcher.hpp>
+#include <Median.hpp>
 
 #define PI 3.14159265
 
@@ -28,6 +29,8 @@ class PegFinder {
 		Histogram* hist_inner_roi_left;
 		Histogram* hist_inner_roi_right;
 		StripeMatcher* matcher;	
+		Median<float>* distance_median;
+		Median<float>* angle_median;
 
 		//Create matrices/kernels
 		Mat raw_hsv_color; 
@@ -47,7 +50,6 @@ class PegFinder {
 
 		pugi::xml_document stream_doc; //For serialising to the RIO
 
-		//TODO: FIND A BETTER WAY TO DO THIS
 		SaveEntry *sliders_save				;	
 		SaveEntry *sliders_limits			;	
 		SaveEntry *imgproc_save				;	

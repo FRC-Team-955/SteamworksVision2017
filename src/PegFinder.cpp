@@ -24,6 +24,9 @@ PegFinder::PegFinder(VideoInterface* video_interface,
 
 	matcher = new StripeMatcher (1, 100);
 
+	distance_median = new Median<float>(5,0);
+	angle_median = new Median<float>(5,0);
+
 	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_open"] + 1, 2*(*imgproc_save)["morph_open"]+1 ), Point( (*imgproc_save)["morph_open"], (*imgproc_save)["morph_open"] ) ); //Make sure that objects have a certain area
 }
 
@@ -90,8 +93,19 @@ std::string PegFinder::ProcessFrame() {
 		Rect right_hist_portion_Rect = goal_center_Rect; 
 
 		//TODO: Move these constants to variables in the save file
-		left_hist_portion_Rect.x  -= left_hist_portion_Rect.width  * 1.5; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
-		right_hist_portion_Rect.x += right_hist_portion_Rect.width * 1.5;
+		left_hist_portion_Rect.x  -= left_hist_portion_Rect.width  * 1; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
+		right_hist_portion_Rect.x += right_hist_portion_Rect.width * 1;
+
+		left_hist_portion_Rect.y  -= left_hist_portion_Rect.height  * 3; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
+		right_hist_portion_Rect.y -= right_hist_portion_Rect.height * 3;
+
+		if (left_hist_portion_Rect.y < 0) {
+			left_hist_portion_Rect.y = 0;
+		}
+
+		if (right_hist_portion_Rect.y < 0) {
+			right_hist_portion_Rect.y = 0;
+		}
 
 		if ((*application_options)["show_overlays"]) {
 			rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
@@ -117,6 +131,7 @@ std::string PegFinder::ProcessFrame() {
 		int x_center_left_Rect 	= MidPoint(left_hist_portion_Rect.tl(),  left_hist_portion_Rect.br()).x;
 		int x_center_right_Rect = MidPoint(right_hist_portion_Rect.tl(), right_hist_portion_Rect.br()).x;
 
+
 		int distance_to_screen_edge = (*video_interface_save)["bgr_width"] / 2;
 
 		//Eight and a quarter inches is how far apart the centers of the stripes should be, by spec
@@ -139,29 +154,32 @@ std::string PegFinder::ProcessFrame() {
 		float angle = (atanf(depth_x_slope) * 180.0f) / PI;
 
 		//TODO: Time stamping!
-		//if (depth > 0 && depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
-		root_node.append_attribute("distance_to_target") = depth; 
-		//root_node.append_attribute("slope_depth") = depth_x_slope;
-		//root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
-		//root_node.append_attribute("slope_height") = (float)(GetCenter(stripe_A).y - GetCenter(stripe_B).y) / (float)(GetCenter(stripe_A).x - GetCenter(stripe_B).x);
-		//root_node.append_attribute("x_magnitude_inch") = magnitude_x_inch; 
-		root_node.append_attribute("angle") = angle; 
-		//stream_doc.save(*output_ss); 
-		std::cout << "angle: " << angle << std::endl;
-		std::cout << " x left center offset inch: " << x_center_left_Rect_inch << std::endl;
-		std::cout << "  x right center offset inch: " << x_center_right_Rect_inch << std::endl;
-		std::cout << "   center x offsets: " << fabs(x_center_right_Rect_inch - x_center_left_Rect_inch) << std::endl;
-		std::cout << "    x left center depth inch: " << depth_left_Rect_inch << std::endl;
-		std::cout << "     x right center depth inch: " << depth_right_Rect_inch << std::endl;
-		std::cout << "      center depth offsets: " << fabs(depth_right_Rect_inch - depth_left_Rect_inch) << std::endl;
-		std::cout << "       depth_x_slope: " << depth_x_slope << std::endl;
-		std::cout << "        mag x px: " << magnitude_x_inch << std::endl;
-		//TODO: Yuck
-		std::stringstream ss;
-		stream_doc.save(ss);
-		ret = ss.str();
-		//*output_ss << "timestamp: " << video_interface<< std::endl;
-		//}
+		if (depth > 0 && depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
+			distance_median->insert_median_data((depth_left_Rect_inch + depth_left_Rect_inch) / 2);
+			angle_median->insert_median_data(angle);
+			root_node.append_attribute("distance_to_target") = distance_median->compute_median();
+			root_node.append_attribute("angle") = angle_median->compute_median(); 
+			//root_node.append_attribute("slope_depth") = depth_x_slope;
+			//root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
+			//root_node.append_attribute("slope_height") = (float)(GetCenter(stripe_A).y - GetCenter(stripe_B).y) / (float)(GetCenter(stripe_A).x - GetCenter(stripe_B).x);
+			//root_node.append_attribute("x_magnitude_inch") = magnitude_x_inch; 
+			//stream_doc.save(*output_ss); 
+			//TODO: Yuck
+			std::stringstream ss;
+			stream_doc.save(ss);
+			ret = ss.str();
+			//*output_ss << "timestamp: " << video_interface<< std::endl;
+		}
+//		std::cout << "angle: " << angle << std::endl;
+//		std::cout << " x left center offset inch: " << x_center_left_Rect_inch << std::endl;
+//		std::cout << "  x right center offset inch: " << x_center_right_Rect_inch << std::endl;
+//		std::cout << "   center x offsets: " << fabs(x_center_right_Rect_inch - x_center_left_Rect_inch) << std::endl;
+//		std::cout << "    x left center depth inch: " << depth_left_Rect << std::endl;
+//		std::cout << "     x right center depth inch: " << depth_right_Rect << std::endl;
+//		std::cout << "      center depth offsets: " << fabs(depth_right_Rect_inch - depth_left_Rect_inch) << std::endl;
+//		std::cout << "       depth_x_slope: " << depth_x_slope << std::endl;
+//		std::cout << "        mag x px: " << magnitude_x_inch << std::endl;
+//
 	}
 
 	//Get a box that encapsulates both stripes

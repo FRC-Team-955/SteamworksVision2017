@@ -6,3 +6,4 @@ build
 *.blend1
 *.exr
 *.png
+.flooignore

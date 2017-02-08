@@ -32,3 +32,4 @@ class Realsense : public VideoInterface
 };
 
 #endif
+
