@@ -136,21 +136,24 @@ void InitializeSaveFile () {
 
 
 //TODO: Move this stuff to it's own class or make it less icky somehow
-std::stringstream ss;
 pthread_mutex_t xml_mutex;
 pthread_t xml_thread;
 PegFinder* finder;
 bool use_waitkey = false;
+std::string out_string = "";
 
 void* finder_thread (void* arg) {
+	std::stringstream ss;
 	while (true) {
 		sensor->GrabFrames();	
+		ss.str("");
 		ss.clear();
 		send_doc.reset();
 		finder->ProcessFrame();
+		send_doc.save(ss);
 
 		pthread_mutex_lock(&xml_mutex);
-		send_doc.save(ss);
+		out_string = ss.str();
 		pthread_mutex_unlock(&xml_mutex);
 
 		if (use_waitkey) {cv::waitKey(10);}
@@ -160,6 +163,7 @@ void* finder_thread (void* arg) {
 }
 
 void ServerMode() {
+	std::stringstream ss;
 	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
 
 	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
@@ -212,7 +216,7 @@ void ServerMode() {
 			std::cerr << serv->WaitForClientMessage();
 
 			pthread_mutex_lock(&xml_mutex);
-			serv->SendClientMessage(ss.str().c_str());
+			serv->SendClientMessage(out_string.c_str());
 			pthread_mutex_unlock(&xml_mutex);
 
 		}
