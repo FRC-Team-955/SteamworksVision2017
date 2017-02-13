@@ -145,6 +145,8 @@ bool use_waitkey = false;
 void* finder_thread (void* arg) {
 	while (true) {
 		sensor->GrabFrames();	
+		ss.clear();
+		send_doc.reset();
 		finder->ProcessFrame();
 
 		pthread_mutex_lock(&xml_mutex);
@@ -200,6 +202,8 @@ void ServerMode() {
 
 	pthread_mutex_init(&xml_mutex, NULL);
 	pthread_create(&xml_thread, NULL, &finder_thread, NULL);
+
+	sensor->SetColorExposure(video_interface_save["exposure"]);
 
 	while(true) {
 		std::cerr << "Waiting for client connection on port " << 5806 << std::endl;
