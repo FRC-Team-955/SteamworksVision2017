@@ -12,6 +12,8 @@ class DummyCamera : public VideoInterface {
 
 		void GrabFrames();
 
+		float GetTimeStamp();
+
 		~DummyCamera();
 };
 

@@ -1,30 +1,31 @@
 {
     "Application_Options": {
-        "show_HSV": 1,
+        "show_HSV": 0,
         "show_depth": 1,
         "show_overlays": 1,
         "show_rgb": 1,
         "show_sliders_boiler": 0,
-        "show_sliders_peg": 1,
-        "static_test": 1
+        "show_sliders_peg": 0,
+        "static_test": 0
     },
     "Imgproc_const_Boiler": {
         "histogram_max": 50000,
         "histogram_min": 1,
         "histogram_percentile": 10,
-        "morph_open": 30
+        "morph_open": 5
     },
     "Imgproc_const_Peg": {
         "histogram_max": 50000,
         "histogram_min": 1,
         "histogram_percentile": 10,
-        "morph_open": 5
+        "morph_close": 19,
+        "morph_open": 3
     },
     "Sensor": {
-        "bgr_framerate": 30,
-        "bgr_height": 1080,
-        "bgr_width": 1920,
-        "depth_framerate": 30,
+        "bgr_framerate": 60,
+        "bgr_height": 480,
+        "bgr_width": 640,
+        "depth_framerate": 60,
         "depth_height": 360,
         "depth_width": 480,
         "exposure": 30
@@ -58,11 +59,11 @@
     },
     "Sliders_Peg": {
         "area_slider": 113,
-        "hue_slider_lower": 40,
-        "hue_slider_upper": 79,
+        "hue_slider_lower": 51,
+        "hue_slider_upper": 91,
         "sat_slider_lower": 144,
         "sat_slider_upper": 256,
-        "val_slider_lower": 164,
+        "val_slider_lower": 147,
         "val_slider_upper": 256
     }
 }

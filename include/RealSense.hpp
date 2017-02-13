@@ -27,6 +27,8 @@ class Realsense : public VideoInterface
 
 		bool GetDeviceBySerial (char* serial);
 
+		float GetTimeStamp();
+
 		// Free up memory/stop processes
 		~Realsense();
 };

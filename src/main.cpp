@@ -8,6 +8,8 @@
 #include <RealSense.hpp>
 #include <DummyCamera.hpp>
 #include <opencv2/opencv.hpp>
+#include <thread>
+#include <pthread.h>
 
 using SaveEntry = std::unordered_map<std::string, int>;
 
@@ -28,7 +30,11 @@ Saving* save_file;
 Sliders* interface_peg;
 Sliders* interface_boiler;
 
-VideoInterface* sensor;
+Realsense* sensor;
+VideoInterface* dummy;
+
+
+pugi::xml_document send_doc;
 
 void InitializeSaveFile () {
 	//File saving fields
@@ -84,6 +90,7 @@ void InitializeSaveFile () {
 
 	imgproc_save_peg = {
 		{"morph_open"				,	5		},
+		{"morph_close"				,	5		},
 		{"histogram_min"			,	1		}, 
 		{"histogram_max"			,	50000	},
 		{"histogram_percentile"	,	10		} 
@@ -127,6 +134,29 @@ void InitializeSaveFile () {
 
 }
 
+
+//TODO: Move this stuff to it's own class or make it less icky somehow
+std::stringstream ss;
+pthread_mutex_t xml_mutex;
+pthread_t xml_thread;
+PegFinder* finder;
+bool use_waitkey = false;
+
+void* finder_thread (void* arg) {
+	while (true) {
+		sensor->GrabFrames();	
+		finder->ProcessFrame();
+
+		pthread_mutex_lock(&xml_mutex);
+		send_doc.save(ss);
+		pthread_mutex_unlock(&xml_mutex);
+
+		if (use_waitkey) {cv::waitKey(10);}
+
+	}
+	return NULL;
+}
+
 void ServerMode() {
 	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
 
@@ -140,27 +170,47 @@ void ServerMode() {
 			serial
 			); 
 
+	use_waitkey = 
+		!application_options["static_test"			] ||		
+		!application_options["show_sliders_peg"	] ||
+		!application_options["show_sliders_boiler"] ||
+		!application_options["show_rgb"				] || 
+		!application_options["show_depth"			] ||
+		!application_options["show_HSV"				] || 
+		!application_options["show_overlays"		] ;
+
+
 	Networking::Server* serv = new Networking::Server(5806);			
 
 	cv::Mat display_out;
 	display_out = *sensor->bgrmatCV;
 
-	PegFinder* finder = new PegFinder(
+	finder = new PegFinder(
 			sensor							, 
 			&sliders_save_peg				,	
 			&sliders_save_peg_limits	,	
 			&imgproc_save_peg				,	
 			&application_options			,	
-			&video_interface_save	
+			&video_interface_save		,
+			&send_doc
 			);
+
+	finder->ProcessFrame();
+	send_doc.save(ss);
+
+	pthread_mutex_init(&xml_mutex, NULL);
+	pthread_create(&xml_thread, NULL, &finder_thread, NULL);
 
 	while(true) {
 		std::cerr << "Waiting for client connection on port " << 5806 << std::endl;
 		serv->WaitForClientConnection();
 		while (serv->GetNetState()) {
 			std::cerr << serv->WaitForClientMessage();
-			serv->SendClientMessage(finder->ProcessFrame().c_str());
-			cv::waitKey(10);
+
+			pthread_mutex_lock(&xml_mutex);
+			serv->SendClientMessage(ss.str().c_str());
+			pthread_mutex_unlock(&xml_mutex);
+
 		}
 		std::cerr << "Connection stopped. Uh oh." << std::endl;
 	}
@@ -168,7 +218,7 @@ void ServerMode() {
 }
 
 void TestStatic(char* rgb_directory, char* depth_directory) {
-	sensor = new DummyCamera(
+	dummy = new DummyCamera(
 			rgb_directory,
 			depth_directory,
 			video_interface_save["depth_width"	], 
@@ -178,23 +228,24 @@ void TestStatic(char* rgb_directory, char* depth_directory) {
 			); 
 
 	PegFinder* finder = new PegFinder(
-			sensor							, 
+			dummy								, 
 			&sliders_save_peg				,	
 			&sliders_save_peg_limits	,	
 			&imgproc_save_peg				,	
 			&application_options			,	
-			&video_interface_save	
+			&video_interface_save		,
+			&send_doc
 			);
 
 	while(true) {
 		sensor->GrabFrames();
-		std::cout << finder->ProcessFrame() << std::endl;
+		//std::cout << finder->ProcessFrame() << std::endl;
 		cv::waitKey(10);
 	}
 }
 
 void TestLive() {
-char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
+	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
 
 	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
 			video_interface_save["depth_width"		], 
@@ -206,23 +257,42 @@ char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null 
 			serial
 			); 
 
+	sensor->SetColorExposure(video_interface_save["exposure"]);
+
 	PegFinder* finder = new PegFinder(
 			sensor							, 
 			&sliders_save_peg				,	
 			&sliders_save_peg_limits	,	
 			&imgproc_save_peg				,	
 			&application_options			,	
-			&video_interface_save	
+			&video_interface_save		,
+			&send_doc
 			);
+
+	//TODO: Move this to main() 
+	bool use_waitkey = 
+		!application_options["static_test"			] ||		
+		!application_options["show_sliders_peg"	] ||
+		!application_options["show_sliders_boiler"] ||
+		!application_options["show_rgb"				] || 
+		!application_options["show_depth"			] ||
+		!application_options["show_HSV"				] || 
+		!application_options["show_overlays"		] ;
+
+	std::cout << use_waitkey << std::endl;
 
 	while(true) {
 		sensor->GrabFrames();
-		std::cout << finder->ProcessFrame() << std::endl;
-		cv::waitKey(10);
+		//std::stringstream ss;
+		finder->ProcessFrame();
+		send_doc.save(std::cout);
+		//ret = ss.str();
+
+		if (use_waitkey) {	
+			cv::waitKey(10);
+		}
 	}
 }
-
-
 
 int main (int argc, char** argv) {
 	//Command args
@@ -268,6 +338,8 @@ int main (int argc, char** argv) {
 			ServerMode();
 			break;
 	}
+
+	//send_doc = new pugi::xml_document();
 
 }
 

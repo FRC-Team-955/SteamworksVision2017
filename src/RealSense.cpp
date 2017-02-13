@@ -52,7 +52,12 @@ void Realsense::SetDepthExposure(int exposure) {
 
 
 void Realsense::SetColorExposure(int exposure) {
+	dev->set_option(rs::option::color_enable_auto_exposure, 0);
 	dev->set_option(rs::option::color_exposure, exposure);
+}
+
+float Realsense::GetTimeStamp() {
+	return dev->get_frame_timestamp(rs::stream::color);
 }
 
 Realsense::~Realsense() {

@@ -16,6 +16,10 @@ DummyCamera::DummyCamera(const char* bgr_directory, const char* depth_directory,
 }	
 
 
+float DummyCamera::GetTimeStamp() {
+	return 0.0;
+}
+
 void DummyCamera::GrabFrames() {
 }
 

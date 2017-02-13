@@ -5,7 +5,8 @@ PegFinder::PegFinder(VideoInterface* video_interface,
 		SaveEntry *sliders_limits			,	
 		SaveEntry *imgproc_save				,	
 		SaveEntry *application_options	,	
-		SaveEntry *video_interface_save	
+		SaveEntry *video_interface_save	,
+		pugi::xml_document* stream_doc
 		) {
 
 	this->video_interface = video_interface;
@@ -14,11 +15,12 @@ PegFinder::PegFinder(VideoInterface* video_interface,
 	this->imgproc_save				=	imgproc_save		 	; 
 	this->application_options		=	application_options	; 
 	this->video_interface_save		=	video_interface_save	;
+	this->stream_doc 					=	stream_doc				;
 
 	//Object initialization
-	histogram_goal_center = new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
-	hist_inner_roi_left = new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
-	hist_inner_roi_right = new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
+	histogram_goal_center	= new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
+	hist_inner_roi_left	 	= new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
+	hist_inner_roi_right 	= new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
 
 	matcher = new StripeMatcher (1, 100);
 
@@ -26,11 +28,11 @@ PegFinder::PegFinder(VideoInterface* video_interface,
 	angle_median = new Median<float>(5,0);
 
 	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_open"] + 1, 2*(*imgproc_save)["morph_open"]+1 ), Point( (*imgproc_save)["morph_open"], (*imgproc_save)["morph_open"] ) ); //Make sure that objects have a certain area
+	morph_close_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_close"] + 1, 2*(*imgproc_save)["morph_close"]+1 ), Point( (*imgproc_save)["morph_close"], (*imgproc_save)["morph_close"] ) ); //Make sure that objects have a certain area
 }
 
-std::string PegFinder::ProcessFrame() {
+void PegFinder::ProcessFrame() {
 	std::string ret;
-	video_interface->GrabFrames();
 	if ((*application_options)["show_depth"]) {
 		imshow("DEPTH", *video_interface->largeDepthCV * 6);
 	}
@@ -43,6 +45,7 @@ std::string PegFinder::ProcessFrame() {
 			Scalar ((*sliders_save)["hue_slider_upper"], (*sliders_save)["sat_slider_upper"], (*sliders_save)["val_slider_upper"]),
 			hsv_range_mask);
 	morphologyEx(hsv_range_mask, hsv_range_mask_filtered, MORPH_OPEN, morph_open_struct_element);
+	morphologyEx(hsv_range_mask_filtered, hsv_range_mask_filtered, MORPH_CLOSE, morph_close_struct_element);
 
 
 	if ((*application_options)["show_HSV"]) {
@@ -65,7 +68,7 @@ std::string PegFinder::ProcessFrame() {
 
 		//Check if it fits contour criteria (Area, and ROI width to height ratio)
 		//TODO: Set the tolerance from the save file!
-		if ( bounding_rectangle->area() >= (*sliders_save)["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.2) ) {
+		if ( bounding_rectangle->area() >= (*sliders_save)["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.3) ) {
 			rectangle(display_buffer, *bounding_rectangle, Scalar(0, 255, 255), 2);
 
 			//Create a new stripe object
@@ -79,11 +82,26 @@ std::string PegFinder::ProcessFrame() {
 	// Find the best pair (Find closest by most similar Y value, area, and distance to adjacent)
 	Rect* left_stripe = nullptr;
 	Rect* right_stripe = nullptr;
+	//TODO: Move this to the save class instead
+	stream_doc->reset();
+	pugi::xml_node root_node = stream_doc->append_child("Root");
+
+	if ((left_stripe && !right_stripe) || (!left_stripe && right_stripe)) {
+		root_node.append_attribute("stripes_found") = "one";
+	}
+
+	if (left_stripe && right_stripe) {
+		root_node.append_attribute("stripes_found") = "both";
+	}
+
+	if (!left_stripe && !right_stripe) {
+		root_node.append_attribute("stripes_found") = "both";
+	}
+
 	if (matcher->FindPair(&stripes, left_stripe, right_stripe) && left_stripe && right_stripe) {
 		if (GetCenter(right_stripe).x > GetCenter(left_stripe).x) {
 			std::swap(left_stripe, right_stripe);
 		}
-
 		Rect goal_center_Rect = Rect(
 				Point(left_stripe->br().x, left_stripe->tl().y), 
 				Point(right_stripe->tl().x, right_stripe->br().y)); //Only get the inner area between the two strips because the strips themselves reflect the IR that allows for depth (See notes) 
@@ -97,6 +115,7 @@ std::string PegFinder::ProcessFrame() {
 		left_hist_portion_Rect.y  -= left_hist_portion_Rect.height  * 3; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
 		right_hist_portion_Rect.y -= right_hist_portion_Rect.height * 3;
 
+		//Cut off the side of the box when it hits the edge instead of trying to sample outside of the image (That breaks things)
 		if (left_hist_portion_Rect.y < 0) {
 			left_hist_portion_Rect.y = 0;
 		}
@@ -105,11 +124,23 @@ std::string PegFinder::ProcessFrame() {
 			right_hist_portion_Rect.y = 0;
 		}
 
+		if (left_hist_portion_Rect.x < 0) {
+			int cutoff = abs(left_hist_portion_Rect.x);
+			left_hist_portion_Rect.x = 0;
+			left_hist_portion_Rect.width -= cutoff;
+		}
+
+		if (right_hist_portion_Rect.x + right_hist_portion_Rect.width > (*video_interface_save)["bgr_width"]) {
+			int cutoff = abs((right_hist_portion_Rect.x + right_hist_portion_Rect.width) - (*video_interface_save)["bgr_width"]);
+			right_hist_portion_Rect.width -= cutoff;
+		}
+
 		if ((*application_options)["show_overlays"]) {
 			rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
 			line(display_buffer, GetCenter(left_stripe), GetCenter(right_stripe), Scalar(0, 0, 255), 3, CV_AA); 
 		}
 
+		//TODO: Add this to the config file stuff
 		rectangle(display_buffer, left_hist_portion_Rect, Scalar(255, 0, 255), 2);  
 		rectangle(display_buffer, right_hist_portion_Rect, Scalar(255,0, 255), 2);  
 
@@ -117,11 +148,8 @@ std::string PegFinder::ProcessFrame() {
 		hist_inner_roi_left->insert_histogram_data(&left_hist_portion_Rect, video_interface->largeDepthCV);
 		hist_inner_roi_right->insert_histogram_data(&right_hist_portion_Rect, video_interface->largeDepthCV);
 
-		//TODO: Move this to the save class instead
-		stream_doc.reset();
-		pugi::xml_node root_node = stream_doc.append_child("Root");
-
-		int depth = histogram_goal_center->take_percentile((*imgproc_save)["histogram_percentile"]);
+		//TODO: Document the hell out of this, and reorganize (Class?)
+		//int depth = histogram_goal_center->take_percentile((*imgproc_save)["histogram_percentile"]);
 
 		int depth_left_Rect = hist_inner_roi_left->take_percentile((*imgproc_save)["histogram_percentile"]);
 		int depth_right_Rect = hist_inner_roi_right->take_percentile((*imgproc_save)["histogram_percentile"]);
@@ -152,33 +180,18 @@ std::string PegFinder::ProcessFrame() {
 		float angle = (atanf(depth_x_slope) * 180.0f) / PI;
 
 		//TODO: Time stamping!
-		if (depth > 0 && depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
+		if (depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
 			distance_median->insert_median_data((depth_left_Rect_inch + depth_left_Rect_inch) / 2);
 			angle_median->insert_median_data(angle);
 			root_node.append_attribute("distance_to_target") = distance_median->compute_median();
 			root_node.append_attribute("angle") = angle_median->compute_median(); 
-			//root_node.append_attribute("slope_depth") = depth_x_slope;
-			//root_node.append_attribute("pixels_per_inch_at_depth") = eight_and_quarter_inches_in_px; 
-			//root_node.append_attribute("slope_height") = (float)(GetCenter(stripe_A).y - GetCenter(stripe_B).y) / (float)(GetCenter(stripe_A).x - GetCenter(stripe_B).x);
-			//root_node.append_attribute("x_magnitude_inch") = magnitude_x_inch; 
-			//stream_doc.save(*output_ss); 
-			//TODO: Yuck
-			std::stringstream ss;
-			stream_doc.save(ss);
-			ret = ss.str();
-			//*output_ss << "timestamp: " << video_interface<< std::endl;
+		} else {
+			root_node.append_attribute("distance_to_target") = 99999;
+			root_node.append_attribute("angle") = 99999;
 		}
-//		std::cout << "angle: " << angle << std::endl;
-//		std::cout << " x left center offset inch: " << x_center_left_Rect_inch << std::endl;
-//		std::cout << "  x right center offset inch: " << x_center_right_Rect_inch << std::endl;
-//		std::cout << "   center x offsets: " << fabs(x_center_right_Rect_inch - x_center_left_Rect_inch) << std::endl;
-//		std::cout << "    x left center depth inch: " << depth_left_Rect << std::endl;
-//		std::cout << "     x right center depth inch: " << depth_right_Rect << std::endl;
-//		std::cout << "      center depth offsets: " << fabs(depth_right_Rect_inch - depth_left_Rect_inch) << std::endl;
-//		std::cout << "       depth_x_slope: " << depth_x_slope << std::endl;
-//		std::cout << "        mag x px: " << magnitude_x_inch << std::endl;
-//
-	}
+		root_node.append_attribute("timestamp") = video_interface->GetTimeStamp();
+
+	}  
 
 	//Get a box that encapsulates both stripes
 
@@ -188,7 +201,6 @@ std::string PegFinder::ProcessFrame() {
 	if ((*application_options)["show_rgb"]) {
 		imshow("COLOR", display_buffer);
 	}
-	return ret;
 }
 
 PegFinder::~PegFinder() {

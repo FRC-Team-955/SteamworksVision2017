@@ -38,6 +38,7 @@ class PegFinder {
 		Mat hsv_range_mask; 
 
 		Mat morph_open_struct_element;
+		Mat morph_close_struct_element;
 
 		Mat hsv_range_mask_filtered; 
 		
@@ -48,7 +49,7 @@ class PegFinder {
 		//TODO: Deallocate all of that dedodated wam (mem leak!)
 		std::vector< Rect * > stripes;
 
-		pugi::xml_document stream_doc; //For serialising to the RIO
+		pugi::xml_document* stream_doc; //For serialising to the RIO
 
 		SaveEntry *sliders_save				;	
 		SaveEntry *sliders_limits			;	
@@ -64,10 +65,11 @@ class PegFinder {
 				SaveEntry *sliders_limits			,	
 				SaveEntry *imgproc_save				,	
 				SaveEntry *application_options	,	
-				SaveEntry *video_interface_save	
+				SaveEntry *video_interface_save	,
+				pugi::xml_document* stream_doc
 				) ;
 
-		std::string ProcessFrame();
+		void ProcessFrame();
 
 		~PegFinder();
 };
