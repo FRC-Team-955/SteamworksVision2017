@@ -86,19 +86,16 @@ void PegFinder::ProcessFrame() {
 	stream_doc->reset();
 	pugi::xml_node root_node = stream_doc->append_child("Root");
 
-	if ((left_stripe && !right_stripe) || (!left_stripe && right_stripe)) {
+	if (stripes.size() == 1) {
 		root_node.append_attribute("stripes_found") = "one";
 	}
 
-	if (left_stripe && right_stripe) {
-		root_node.append_attribute("stripes_found") = "both";
-	}
-
-	if (!left_stripe && !right_stripe) {
-		root_node.append_attribute("stripes_found") = "both";
+	if (!stripes.size()) {
+		root_node.append_attribute("stripes_found") = "none";
 	}
 
 	if (matcher->FindPair(&stripes, left_stripe, right_stripe) && left_stripe && right_stripe) {
+		root_node.append_attribute("stripes_found") = "both";
 		if (GetCenter(right_stripe).x > GetCenter(left_stripe).x) {
 			std::swap(left_stripe, right_stripe);
 		}
@@ -179,7 +176,7 @@ void PegFinder::ProcessFrame() {
 
 		float angle = (atanf(depth_x_slope) * 180.0f) / PI;
 
-		//TODO: Time stamping!
+		root_node.append_attribute("x_offset_to_target") = magnitude_x_inch;
 		if (depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
 			distance_median->insert_median_data((depth_left_Rect_inch + depth_left_Rect_inch) / 2);
 			angle_median->insert_median_data(angle);

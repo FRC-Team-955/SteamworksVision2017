@@ -29,6 +29,9 @@ class Realsense : public VideoInterface
 
 		float GetTimeStamp();
 
+		//cv::Mat* leftIRCV;
+		//cv::Mat* rightIRCV;
+
 		// Free up memory/stop processes
 		~Realsense();
 };

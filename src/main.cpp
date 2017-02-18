@@ -10,6 +10,8 @@
 #include <opencv2/opencv.hpp>
 #include <thread>
 #include <pthread.h>
+#include <vector>
+#include <sys/stat.h>
 
 using SaveEntry = std::unordered_map<std::string, int>;
 
@@ -131,7 +133,6 @@ void InitializeSaveFile () {
 		save_file->SaveJSON(); 
 		std::cerr << "Finished creating defaults." << std::endl;
 	}
-
 }
 
 
@@ -245,12 +246,19 @@ void TestStatic(char* rgb_directory, char* depth_directory) {
 			&send_doc
 			);
 
+
 	while(true) {
-		sensor->GrabFrames();
-		//std::cout << finder->ProcessFrame() << std::endl;
+		dummy->GrabFrames();
+		finder->ProcessFrame();
+		send_doc.save(std::cout);
 		cv::waitKey(10);
 	}
 }
+
+typedef union {
+	short int_var;
+	char ch1ch2[2];
+} COMBO;
 
 void TestLive() {
 	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
@@ -265,7 +273,7 @@ void TestLive() {
 			serial
 			); 
 
-	sensor->SetColorExposure(video_interface_save["exposure"]);
+	//sensor->SetColorExposure(video_interface_save["exposure"]);
 
 	PegFinder* finder = new PegFinder(
 			sensor							, 
@@ -287,20 +295,83 @@ void TestLive() {
 		!application_options["show_HSV"				] || 
 		!application_options["show_overlays"		] ;
 
-	std::cout << use_waitkey << std::endl;
+	std::vector<uchar> buff;
+
+	//Networking::Server* serv = new Networking::Server(2345);
+	//serv->WaitForClientConnection();
+	VideoWriter writer;
+	Mat img8c3 (
+			video_interface_save["bgr_height"],
+			video_interface_save["bgr_width"], 
+			CV_8UC3);
+	Mat img16uc1 (
+			video_interface_save["bgr_height"],
+			video_interface_save["bgr_width"], 
+			CV_16UC1);
 
 	while(true) {
 		sensor->GrabFrames();
-		//std::stringstream ss;
+		//writer.fourcc('M', 'J', 'P', 'G');
 		finder->ProcessFrame();
-		send_doc.save(std::cout);
-		//ret = ss.str();
+		//send_doc.save(std::cout);
+		//img8c3.data = sensor->largeDepthCV->data;
 
-		if (use_waitkey) {	
-			cv::waitKey(10);
+/*
+		for (int x = 0; x < img8c3.size().width; x++) {
+			for (int y = 0; y < img8c3.size().height; y++) {
+				COMBO pixel;
+				pixel.int_var = sensor->largeDepthCV->at<unsigned short>(y,x);	
+				img8c3.at<Vec3b> (y,x)[0] = pixel.ch1ch2[0];
+				img8c3.at<Vec3b> (y,x)[1] = pixel.ch1ch2[1];
+			}
+			}
+			*/
+		size_t length = sensor->largeDepthCV->size().area();
+		unsigned char* ch3dataposition = img8c3.data;
+		unsigned char* ch1dataposition = sensor->largeDepthCV->data;
+		COMBO pixel;
+		for (int i = 0; i < length; i++) {
+			pixel.int_var = *ch1dataposition;
+			*ch3dataposition++ = pixel.ch1ch2[0];
+			*ch3dataposition++ = pixel.ch1ch2[1];
+			*ch3dataposition++ = pixel.ch1ch2[1];
+			ch1dataposition++;
+			ch3dataposition++;
 		}
+		imshow("wat", img8c3);
+		//imshow("wat2", *sensor->largeDepthCV);
+		//imshow("Left", *sensor->rightIRCV);
+		//imshow("Right", *sensor->leftIRCV);
+		//imshow("Color", *sensor->bgrmatCV);
+		//imshow("Depth", *sensor->depthmatCV * 8);
+
+		//cv::imencode(".jpg", *sensor->bgrmatCV, buff);
+		//for (auto& i : buff) {
+		//	std::cout << i;
+		//}
+
+		cv::waitKey(1);
 	}
 }
+
+std::string getDateFileName () {
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	std::stringstream ss; //Dumb hack
+	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
+	return ss.str();
+}
+
+//int main () {
+//	std::string directory_name = getFileName();
+//	mkdir(directory_name.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+//	//Realsense* sense = new Realsense();
+//	while (true) {
+//
+//		cv::waitKey(1);
+//	}
+//	return 0;
+//}
 
 int main (int argc, char** argv) {
 	//Command args

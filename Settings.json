@@ -1,12 +1,12 @@
 {
     "Application_Options": {
         "show_HSV": 0,
-        "show_depth": 1,
-        "show_overlays": 1,
-        "show_rgb": 1,
+        "show_depth": 0,
+        "show_overlays": 0,
+        "show_rgb": 0,
         "show_sliders_boiler": 0,
         "show_sliders_peg": 0,
-        "static_test": 0
+        "static_test": 2
     },
     "Imgproc_const_Boiler": {
         "histogram_max": 50000,
@@ -22,12 +22,12 @@
         "morph_open": 3
     },
     "Sensor": {
-        "bgr_framerate": 60,
-        "bgr_height": 480,
-        "bgr_width": 640,
-        "depth_framerate": 60,
-        "depth_height": 360,
-        "depth_width": 480,
+        "bgr_framerate": 30,
+        "bgr_height": 1080,
+        "bgr_width": 1920,
+        "depth_framerate": 30,
+        "depth_height": 480,
+        "depth_width": 640,
         "exposure": 30
     },
     "Sliders_Boiler": {
@@ -58,12 +58,12 @@
         "val_slider_upper": 256
     },
     "Sliders_Peg": {
-        "area_slider": 113,
-        "hue_slider_lower": 51,
-        "hue_slider_upper": 91,
-        "sat_slider_lower": 144,
+        "area_slider": 0,
+        "hue_slider_lower": 56,
+        "hue_slider_upper": 84,
+        "sat_slider_lower": 76,
         "sat_slider_upper": 256,
-        "val_slider_lower": 147,
+        "val_slider_lower": 109,
         "val_slider_upper": 256
     }
 }

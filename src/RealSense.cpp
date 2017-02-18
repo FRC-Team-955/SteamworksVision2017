@@ -14,6 +14,8 @@ void Realsense::GrabFrames () {
 		rgbmatCV->data = (unsigned char*)dev->get_frame_data(rs::stream::rectified_color);
 		cvtColor(*rgbmatCV, *bgrmatCV, CV_RGB2BGR);
 		largeDepthCV->data = (unsigned char*)dev->get_frame_data(rs::stream::depth_aligned_to_color);
+		//leftIRCV->data = (unsigned char*)dev->get_frame_data(rs::stream::infrared);
+		//rightIRCV->data = (unsigned char*)dev->get_frame_data(rs::stream::infrared2);
 	} else {
 		std::cerr << "[ ERROR ] No devices connected! " << std::endl;
 	}
@@ -25,7 +27,9 @@ Realsense::Realsense(int depth_width, int depth_height, int depth_framerate, int
 	registeredCV = new Mat (bgr_height, bgr_width, CV_8UC3); 
 	largeDepthCV = new Mat (bgr_height, bgr_width, CV_16UC1); 
 	depthmatCV = new Mat (depth_height, depth_width, CV_16UC1);
-	//infraredCV = new Mat (360, 480, CV_8UC1);
+
+	//leftIRCV = new Mat (depth_height, depth_width, CV_8UC1);
+	//rightIRCV = new Mat (depth_height, depth_width, CV_8UC1);
 
 	if(!GetDeviceBySerial(serial)) {
 		std::cerr << "Camera with serial number " << serial << " not found. Double check?" << std::endl;
@@ -41,6 +45,9 @@ Realsense::Realsense(int depth_width, int depth_height, int depth_framerate, int
 	//@30FPS, depth at 480x360, color can be 320x240, 640x480, 1280x720, or 1920x1080
 	dev->enable_stream(rs::stream::depth, depth_width, depth_height, rs::format::z16, depth_framerate);
 	dev->enable_stream(rs::stream::color, bgr_width, bgr_height, rs::format::rgb8, bgr_framerate);
+
+	//dev->enable_stream(rs::stream::infrared, depth_width, depth_height, rs::format::y8, depth_framerate);
+	//dev->enable_stream(rs::stream::infrared2, depth_width, depth_height, rs::format::y8, depth_framerate);
 
 	dev->start();
 
