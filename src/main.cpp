@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <vector>
 #include <sys/stat.h>
+#include <MultiBitEncoder.hpp>
 
 using SaveEntry = std::unordered_map<std::string, int>;
 
@@ -34,7 +35,6 @@ Sliders* interface_boiler;
 
 Realsense* sensor;
 VideoInterface* dummy;
-
 
 pugi::xml_document send_doc;
 
@@ -157,7 +157,7 @@ void* finder_thread (void* arg) {
 		out_string = ss.str();
 		pthread_mutex_unlock(&xml_mutex);
 
-		if (use_waitkey) {cv::waitKey(10);}
+		if (use_waitkey) {cv::waitKey(10);};
 
 	}
 	return NULL;
@@ -255,10 +255,6 @@ void TestStatic(char* rgb_directory, char* depth_directory) {
 	}
 }
 
-typedef union {
-	short int_var;
-	char ch1ch2[2];
-} COMBO;
 
 void TestLive() {
 	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
@@ -300,45 +296,37 @@ void TestLive() {
 	//Networking::Server* serv = new Networking::Server(2345);
 	//serv->WaitForClientConnection();
 	VideoWriter writer;
+	writer.fourcc('M', 'J', 'P', 'G');
+	sensor->GrabFrames(); //Initialize largedepthCV
 	Mat img8c3 (
 			video_interface_save["bgr_height"],
 			video_interface_save["bgr_width"], 
 			CV_8UC3);
-	Mat img16uc1 (
-			video_interface_save["bgr_height"],
-			video_interface_save["bgr_width"], 
-			CV_16UC1);
+
+	MultiBitEncoder* encoder = new MultiBitEncoder(1, &img8c3, sensor->largeDepthCV);
 
 	while(true) {
 		sensor->GrabFrames();
-		//writer.fourcc('M', 'J', 'P', 'G');
-		finder->ProcessFrame();
+		//finder->ProcessFrame();
 		//send_doc.save(std::cout);
 		//img8c3.data = sensor->largeDepthCV->data;
 
-/*
-		for (int x = 0; x < img8c3.size().width; x++) {
+		/*
+			for (int x = 0; x < img8c3.size().width; x++) {
 			for (int y = 0; y < img8c3.size().height; y++) {
-				COMBO pixel;
-				pixel.int_var = sensor->largeDepthCV->at<unsigned short>(y,x);	
-				img8c3.at<Vec3b> (y,x)[0] = pixel.ch1ch2[0];
-				img8c3.at<Vec3b> (y,x)[1] = pixel.ch1ch2[1];
+			COMBO pixel;
+			pixel.int_var = sensor->largeDepthCV->at<unsigned short>(y,x);	
+			img8c3.at<Vec3b> (y,x)[0] = pixel.ch1ch2[0];
+			img8c3.at<Vec3b> (y,x)[1] = pixel.ch1ch2[1];
 			}
 			}
 			*/
-		size_t length = sensor->largeDepthCV->size().area();
-		unsigned char* ch3dataposition = img8c3.data;
-		unsigned char* ch1dataposition = sensor->largeDepthCV->data;
-		COMBO pixel;
-		for (int i = 0; i < length; i++) {
-			pixel.int_var = *ch1dataposition;
-			*ch3dataposition++ = pixel.ch1ch2[0];
-			*ch3dataposition++ = pixel.ch1ch2[1];
-			*ch3dataposition++ = pixel.ch1ch2[1];
-			ch1dataposition++;
-			ch3dataposition++;
-		}
+	
+		imshow("wat2", *sensor->largeDepthCV);
+		encoder->Encode16Bit();
+
 		imshow("wat", img8c3);
+		//imshow("Depth", *sensor->largeDepthCV);
 		//imshow("wat2", *sensor->largeDepthCV);
 		//imshow("Left", *sensor->rightIRCV);
 		//imshow("Right", *sensor->leftIRCV);
