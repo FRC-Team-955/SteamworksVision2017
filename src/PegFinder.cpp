@@ -27,8 +27,10 @@ PegFinder::PegFinder(VideoInterface* video_interface,
 	distance_median = new Median<float>(5,0);
 	angle_median = new Median<float>(5,0);
 
-	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_open"] + 1, 2*(*imgproc_save)["morph_open"]+1 ), Point( (*imgproc_save)["morph_open"], (*imgproc_save)["morph_open"] ) ); //Make sure that objects have a certain area
-	morph_close_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_close"] + 1, 2*(*imgproc_save)["morph_close"]+1 ), Point( (*imgproc_save)["morph_close"], (*imgproc_save)["morph_close"] ) ); //Make sure that objects have a certain area
+	//morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_open"] + 1, 2*(*imgproc_save)["morph_open"]+1 ), Point( (*imgproc_save)["morph_open"], (*imgproc_save)["morph_open"] ) ); //Make sure that objects have a certain area
+	//morph_close_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_close"] + 1, 2*(*imgproc_save)["morph_close"]+1 ), Point( (*imgproc_save)["morph_close"], (*imgproc_save)["morph_close"] ) ); //Make sure that objects have a certain area
+	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 5, 3 ), Point( 3, 2 ) ); //Make sure that objects have a certain area
+	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 7, 3 ), Point( 4, 2 ) ); //Make sure that objects have a certain area
 }
 
 void PegFinder::ProcessFrame() {

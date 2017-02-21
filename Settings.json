@@ -1,9 +1,9 @@
 {
     "Application_Options": {
-        "show_HSV": 0,
-        "show_depth": 0,
-        "show_overlays": 0,
-        "show_rgb": 0,
+        "show_HSV": 1,
+        "show_depth": 1,
+        "show_overlays": 1,
+        "show_rgb": 1,
         "show_sliders_boiler": 0,
         "show_sliders_peg": 0,
         "static_test": 2
@@ -22,10 +22,10 @@
         "morph_open": 3
     },
     "Sensor": {
-        "bgr_framerate": 30,
-        "bgr_height": 1080,
-        "bgr_width": 1920,
-        "depth_framerate": 30,
+        "bgr_framerate": 60,
+        "bgr_height": 480,
+        "bgr_width": 640,
+        "depth_framerate": 60,
         "depth_height": 480,
         "depth_width": 640,
         "exposure": 30

@@ -189,8 +189,8 @@ void ServerMode() {
 
 	Networking::Server* serv = new Networking::Server(5806);			
 
-	cv::Mat display_out;
-	display_out = *sensor->bgrmatCV;
+	//cv::Mat display_out;
+	//display_out = *sensor->bgrmatCV;
 
 	finder = new PegFinder(
 			sensor							, 
@@ -295,20 +295,21 @@ void TestLive() {
 
 	//Networking::Server* serv = new Networking::Server(2345);
 	//serv->WaitForClientConnection();
-	VideoWriter writer;
-	writer.fourcc('M', 'J', 'P', 'G');
 	sensor->GrabFrames(); //Initialize largedepthCV
+	VideoWriter writer;
+	//writer.open(getDateFileName(), CV_FOURCC('M', 'J', 'P', 'G'), 30, sensor->largeDepthCV->size(), true);
 	Mat img8c3 (
 			video_interface_save["bgr_height"],
 			video_interface_save["bgr_width"], 
 			CV_8UC3);
 
-	MultiBitEncoder* encoder = new MultiBitEncoder(1, &img8c3, sensor->largeDepthCV);
+	//MultiBitEncoder* encoder = new MultiBitEncoder(1, &img8c3, sensor->largeDepthCV);
 
+	sensor->SetColorExposure(video_interface_save["exposure"]);
 	while(true) {
 		sensor->GrabFrames();
-		//finder->ProcessFrame();
-		//send_doc.save(std::cout);
+		finder->ProcessFrame(); //TODO: Make this less self-contained!
+		send_doc.save(std::cout);
 		//img8c3.data = sensor->largeDepthCV->data;
 
 		/*
@@ -322,16 +323,16 @@ void TestLive() {
 			}
 			*/
 	
-		imshow("wat2", *sensor->largeDepthCV);
-		encoder->Encode16Bit();
-
-		imshow("wat", img8c3);
-		//imshow("Depth", *sensor->largeDepthCV);
 		//imshow("wat2", *sensor->largeDepthCV);
+		//encoder->Encode16Bit();
+
+		//imshow("wat", img8c3);
 		//imshow("Left", *sensor->rightIRCV);
 		//imshow("Right", *sensor->leftIRCV);
 		//imshow("Color", *sensor->bgrmatCV);
-		//imshow("Depth", *sensor->depthmatCV * 8);
+		//sensor->depthmatCV->flags = CV_8UC3;
+		//imshow("Depth", *sensor->largeDepthCV * 16);
+		//sensor->depthmatCV->flags = CV_16UC1;
 
 		//cv::imencode(".jpg", *sensor->bgrmatCV, buff);
 		//for (auto& i : buff) {
