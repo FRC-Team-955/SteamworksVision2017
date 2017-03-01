@@ -49,7 +49,6 @@ void PegFinder::ProcessFrame() {
 	morphologyEx(hsv_range_mask, hsv_range_mask_filtered, MORPH_OPEN, morph_open_struct_element);
 	morphologyEx(hsv_range_mask_filtered, hsv_range_mask_filtered, MORPH_CLOSE, morph_close_struct_element);
 
-
 	if ((*application_options)["show_HSV"]) {
 		imshow("HSV_RANGE_SELECT", hsv_range_mask_filtered);
 	}

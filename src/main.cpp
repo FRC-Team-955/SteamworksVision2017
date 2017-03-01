@@ -258,6 +258,7 @@ void TestStatic(char* rgb_directory, char* depth_directory) {
 
 void TestLive() {
 	char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
+	//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
 
 	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
 			video_interface_save["depth_width"		], 

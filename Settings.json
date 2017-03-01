@@ -1,7 +1,7 @@
 {
     "Application_Options": {
-        "show_HSV": 1,
-        "show_depth": 1,
+        "show_HSV": 0,
+        "show_depth": 0,
         "show_overlays": 1,
         "show_rgb": 1,
         "show_sliders_boiler": 0,
@@ -58,12 +58,12 @@
         "val_slider_upper": 256
     },
     "Sliders_Peg": {
-        "area_slider": 0,
-        "hue_slider_lower": 56,
-        "hue_slider_upper": 84,
-        "sat_slider_lower": 76,
+        "area_slider": 294,
+        "hue_slider_lower": 44,
+        "hue_slider_upper": 113,
+        "sat_slider_lower": 140,
         "sat_slider_upper": 256,
-        "val_slider_lower": 109,
+        "val_slider_lower": 87,
         "val_slider_upper": 256
     }
 }
