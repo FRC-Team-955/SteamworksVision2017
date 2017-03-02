@@ -1,5 +1,5 @@
 {
-    "Application_Options": {
+  "Application_Options": {
         "show_HSV": 0,
         "show_depth": 0,
         "show_overlays": 1,

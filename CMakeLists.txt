@@ -32,7 +32,7 @@ FILE(GLOB SOURCES "src/*.cpp")
 
 # Use c++11 and clang 
 SET (CMAKE_CXX_COMPILER "/usr/bin/clang++")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ") 
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ") 
 
 # Make all of the sources executable
 ADD_EXECUTABLE(RS_Vision ${SOURCES})

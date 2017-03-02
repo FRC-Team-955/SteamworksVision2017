@@ -208,8 +208,6 @@ void ServerMode() {
 	pthread_mutex_init(&xml_mutex, NULL);
 	pthread_create(&xml_thread, NULL, &finder_thread, NULL);
 
-	sensor->SetColorExposure(video_interface_save["exposure"]);
-
 	while(true) {
 		std::cerr << "Waiting for client connection on port " << 5806 << std::endl;
 		serv->WaitForClientConnection();
@@ -306,11 +304,10 @@ void TestLive() {
 
 	//MultiBitEncoder* encoder = new MultiBitEncoder(1, &img8c3, sensor->largeDepthCV);
 
-	sensor->SetColorExposure(video_interface_save["exposure"]);
 	while(true) {
 		sensor->GrabFrames();
-		finder->ProcessFrame(); //TODO: Make this less self-contained!
-		send_doc.save(std::cout);
+		//finder->ProcessFrame(); //TODO: Make this less self-contained!
+		//send_doc.save(std::cout);
 		//img8c3.data = sensor->largeDepthCV->data;
 
 		/*
@@ -330,7 +327,7 @@ void TestLive() {
 		//imshow("wat", img8c3);
 		//imshow("Left", *sensor->rightIRCV);
 		//imshow("Right", *sensor->leftIRCV);
-		//imshow("Color", *sensor->bgrmatCV);
+		imshow("Color", *sensor->bgrmatCV);
 		//sensor->depthmatCV->flags = CV_8UC3;
 		//imshow("Depth", *sensor->largeDepthCV * 16);
 		//sensor->depthmatCV->flags = CV_16UC1;
@@ -344,14 +341,14 @@ void TestLive() {
 	}
 }
 
-std::string getDateFileName () {
-	auto t = std::time(nullptr);
-	auto tm = *std::localtime(&t);
-	std::stringstream ss; //Dumb hack
-	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
-	return ss.str();
-}
-
+//std::string getDateFileName () {
+//	auto t = std::time(nullptr);
+//	auto tm = *std::localtime(&t);
+//	std::stringstream ss; //Dumb hack
+//	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
+//	return ss.str();
+//}
+//
 //int main () {
 //	std::string directory_name = getFileName();
 //	mkdir(directory_name.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
