@@ -98,14 +98,16 @@ void InitializeSaveFile () {
 		{"morph_close"				,	5		},
 		{"histogram_min"			,	1		}, 
 		{"histogram_max"			,	50000	},
-		{"histogram_percentile"	,	10		} 
+		{"histogram_percentile"	,	10		},
+		{"camera_serial"			,	2391011471	}
 	};
 
 	imgproc_save_boiler = {
 		{"morph_open"				,	5		},
 		{"histogram_min"			,	1		}, 
 		{"histogram_max"			,	50000	},
-		{"histogram_percentile"	,	10		} 
+		{"histogram_percentile"	,	10		},
+		{"camera_serial"			,	2391011471	}
 	};
 
 	application_options = {
@@ -136,6 +138,7 @@ void InitializeSaveFile () {
 		save_file->SaveJSON(); 
 		std::cerr << "Finished creating defaults." << std::endl;
 	}
+
 }
 
 
@@ -258,6 +261,7 @@ void TestStatic(char* rgb_directory, char* depth_directory) {
 
 Mat small;
 void TestLive() {
+	std::cout << imgproc_save_peg["camera_serial"] << std::endl;
 	//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
 
 	system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
@@ -313,61 +317,19 @@ void TestLive() {
 		sensor->GrabFrames();
 		finder->ProcessFrame(); //TODO: Make this less self-contained!
 		send_doc.save(std::cout);
-		//img8c3.data = sensor->largeDepthCV->data;
-
-		/*
-			for (int x = 0; x < img8c3.size().width; x++) {
-			for (int y = 0; y < img8c3.size().height; y++) {
-			COMBO pixel;
-			pixel.int_var = sensor->largeDepthCV->at<unsigned short>(y,x);	
-			img8c3.at<Vec3b> (y,x)[0] = pixel.ch1ch2[0];
-			img8c3.at<Vec3b> (y,x)[1] = pixel.ch1ch2[1];
-			}
-			}
-			*/
-
-		//imshow("wat2", *sensor->largeDepthCV);
-		//encoder->Encode16Bit();
-
-		//imshow("wat", img8c3);
-		//imshow("Left", *sensor->rightIRCV);
-		//imshow("Right", *sensor->leftIRCV);
-
-		//resize(*sensor->bgrmatCV, small, Size(480,320));	
-		//cvtColor(small, small, CV_BGR2GRAY);
-		//imshow("Color", small);
-
-		//sensor->depthmatCV->flags = CV_8UC3;
-		//imshow("Depth", *sensor->largeDepthCV * 16);
-		//sensor->depthmatCV->flags = CV_16UC1;
-
-		//cv::imencode(".jpg", *sensor->bgrmatCV, buff);
-		//for (auto& i : buff) {
-		//	std::cout << i;
-		//}
-
 		cv::waitKey(1);
 	}
 }
 
-//std::string getDateFileName () {
-//	auto t = std::time(nullptr);
-//	auto tm = *std::localtime(&t);
-//	std::stringstream ss; //Dumb hack
-//	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
-//	return ss.str();
-//}
-//
-//int main () {
-//	std::string directory_name = getFileName();
-//	mkdir(directory_name.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-//	//Realsense* sense = new Realsense();
-//	while (true) {
-//
-//		cv::waitKey(1);
-//	}
-//	return 0;
-//}
+/*
+std::string getDateFileName () {
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	std::stringstream ss; //Dumb hack
+	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
+	return ss.str();
+}
+*/
 
 int main (int argc, char** argv) {
 	//Command args
@@ -413,8 +375,6 @@ int main (int argc, char** argv) {
 			ServerMode();
 			break;
 	}
-
-	//send_doc = new pugi::xml_document();
 
 }
 
