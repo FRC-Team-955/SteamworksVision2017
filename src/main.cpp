@@ -217,12 +217,13 @@ void ServerMode() {
 		std::cerr << "Waiting for client connection on port " << application_options["server_port"] << std::endl;
 		serv->WaitForClientConnection();
 		while (serv->GetNetState()) {
-			//std::cerr << "Client Message: " << serv->WaitForClientMessage();
+			//std::cerr << "Client Message: " << 
+			serv->WaitForClientMessage();
 
 			pthread_mutex_lock(&xml_mutex);
 			serv->SendClientMessage(out_string.c_str());
-			pthread_mutex_unlock(&xml_mutex);
 			//std::cerr << "Server Broadcast: " << out_string << std::endl;
+			pthread_mutex_unlock(&xml_mutex);
 
 		}
 		std::cerr << "Connection stopped. Uh oh." << std::endl;
