@@ -98,26 +98,25 @@ void InitializeSaveFile () {
 		{"morph_close"				,	5		},
 		{"histogram_min"			,	1		}, 
 		{"histogram_max"			,	50000	},
-		{"histogram_percentile"	,	10		},
-		{"camera_serial"			,	2391011471	}
+		{"histogram_percentile"	,	10		}
 	};
 
 	imgproc_save_boiler = {
 		{"morph_open"				,	5		},
 		{"histogram_min"			,	1		}, 
 		{"histogram_max"			,	50000	},
-		{"histogram_percentile"	,	10		},
-		{"camera_serial"			,	2391011471	}
+		{"histogram_percentile"	,	10		}
 	};
 
 	application_options = {
-		{"static_test"				,	0	}, 
-		{"show_sliders_peg"		,	1	}, 
-		{"show_sliders_boiler"	,	1	}, 
-		{"show_rgb"					,	1	}, 
-		{"show_depth"				,	1	}, 
-		{"show_HSV"					,	1	}, 
-		{"show_overlays"			,	1	}, 
+		{"static_test"				,	0		}, 
+		{"show_sliders_peg"		,	1		}, 
+		{"show_sliders_boiler"	,	1		}, 
+		{"show_rgb"					,	1		}, 
+		{"show_depth"				,	1		}, 
+		{"show_HSV"					,	1		}, 
+		{"show_overlays"			,	1		}, 
+		{"server_port"				,	5806	}
 	}; 
 
 	saved_fields = {
@@ -157,9 +156,10 @@ void* finder_thread (void* arg) {
 		ss.clear();
 		send_doc.reset();
 		finder->ProcessFrame();
-		send_doc.save(ss);
+		send_doc.save(ss, "", pugi::format_raw);
 
 		pthread_mutex_lock(&xml_mutex);
+		ss << std::endl;
 		out_string = ss.str();
 		pthread_mutex_unlock(&xml_mutex);
 
@@ -192,7 +192,7 @@ void ServerMode() {
 		!application_options["show_overlays"		] ;
 
 
-	Networking::Server* serv = new Networking::Server(5806);			
+	Networking::Server* serv = new Networking::Server(application_options["server_port"]);			
 
 	//cv::Mat display_out;
 	//display_out = *sensor->bgrmatCV;
@@ -214,14 +214,15 @@ void ServerMode() {
 	pthread_create(&xml_thread, NULL, &finder_thread, NULL);
 
 	while(true) {
-		std::cerr << "Waiting for client connection on port " << 5806 << std::endl;
+		std::cerr << "Waiting for client connection on port " << application_options["server_port"] << std::endl;
 		serv->WaitForClientConnection();
 		while (serv->GetNetState()) {
-			std::cerr << serv->WaitForClientMessage();
+			//std::cerr << "Client Message: " << serv->WaitForClientMessage();
 
 			pthread_mutex_lock(&xml_mutex);
 			serv->SendClientMessage(out_string.c_str());
 			pthread_mutex_unlock(&xml_mutex);
+			//std::cerr << "Server Broadcast: " << out_string << std::endl;
 
 		}
 		std::cerr << "Connection stopped. Uh oh." << std::endl;
@@ -261,7 +262,6 @@ void TestStatic(char* rgb_directory, char* depth_directory) {
 
 Mat small;
 void TestLive() {
-	std::cout << imgproc_save_peg["camera_serial"] << std::endl;
 	//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
 
 	system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
