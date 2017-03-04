@@ -265,8 +265,6 @@ Mat small;
 void TestLive() {
 	//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
 
-	system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
-	system(("v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(video_interface_save["exposure"]) + " -d 2").c_str());
 
 	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
 			video_interface_save["depth_width"		], 
@@ -366,6 +364,10 @@ int main (int argc, char** argv) {
 
 	interface_peg->UpdateSliders();
 	interface_boiler->UpdateSliders();
+
+	//TODO: Move this later, change it on live view
+	system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
+	system(("v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(video_interface_save["exposure"]) + " -d 2").c_str());
 
 	switch (application_options["static_test"]) {
 		case 2:
