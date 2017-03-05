@@ -3,7 +3,7 @@
 		"server_port": 5806,
 		"show_HSV": 0,
 		"show_depth": 0,
-		"show_overlays": 1,
+		"show_overlays": 0,
 		"show_rgb": 1,
 		"show_sliders_boiler": 0,
 		"show_sliders_peg": 0,

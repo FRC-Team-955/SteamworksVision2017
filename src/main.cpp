@@ -38,8 +38,8 @@ VideoInterface* dummy;
 
 pugi::xml_document send_doc;
 
-char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
-//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
+//char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
+char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
 
 void InitializeSaveFile () {
 	//File saving fields
