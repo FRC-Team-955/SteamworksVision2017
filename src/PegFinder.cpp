@@ -133,59 +133,85 @@ void PegFinder::ProcessFrame() {
 			right_hist_portion_Rect.width -= cutoff;
 		}
 
-		if ((*application_options)["show_overlays"]) {
-			rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
-			line(display_buffer, GetCenter(left_stripe), GetCenter(right_stripe), Scalar(0, 0, 255), 3, CV_AA); 
-		}
+		//If cutting of the side of the box makes it too small, try to 
 
-		//TODO: Add this to the config file stuff
-		rectangle(display_buffer, left_hist_portion_Rect, Scalar(255, 0, 255), 2);  
-		rectangle(display_buffer, right_hist_portion_Rect, Scalar(255,0, 255), 2);  
+		//{"sample_slicing_area_min"	,	10		}
+		if (left_hist_portion_Rect.area() > ((*imgproc_save)["sample_slicing_area_min"] ^ 2) || right_hist_portion_Rect.area() > ((*imgproc_save)["sample_slicing_area_min"] ^ 2)) {
+			if (left_hist_portion_Rect.area() < ((*imgproc_save)["sample_slicing_area_min"] ^ 2)) {
+				left_hist_portion_Rect = right_hist_portion_Rect; //Copy it, then slice both into their respective halves
+				left_hist_portion_Rect.width /= 2;
+				right_hist_portion_Rect.width /= 2;
 
-		histogram_goal_center->insert_histogram_data(&goal_center_Rect, video_interface->largeDepthCV);
-		hist_inner_roi_left->insert_histogram_data(&left_hist_portion_Rect, video_interface->largeDepthCV);
-		hist_inner_roi_right->insert_histogram_data(&right_hist_portion_Rect, video_interface->largeDepthCV);
+				right_hist_portion_Rect.x += left_hist_portion_Rect.width;
+			}
 
-		//TODO: Document the hell out of this, and reorganize (Class?)
-		//int depth = histogram_goal_center->take_percentile((*imgproc_save)["histogram_percentile"]);
+			if (right_hist_portion_Rect.area() < ((*imgproc_save)["sample_slicing_area_min"] ^ 2)) {
+				right_hist_portion_Rect = left_hist_portion_Rect; //Copy it, then slice both into their respective halves
+				left_hist_portion_Rect.width /= 2;
+				right_hist_portion_Rect.width /= 2;
 
-		int depth_left_Rect = hist_inner_roi_left->take_percentile((*imgproc_save)["histogram_percentile"]);
-		int depth_right_Rect = hist_inner_roi_right->take_percentile((*imgproc_save)["histogram_percentile"]);
+				right_hist_portion_Rect.x += left_hist_portion_Rect.width;
+			}
 
-		int x_center_left_Rect 	= MidPoint(left_hist_portion_Rect.tl(),  left_hist_portion_Rect.br()).x;
-		int x_center_right_Rect = MidPoint(right_hist_portion_Rect.tl(), right_hist_portion_Rect.br()).x;
+			if ((*application_options)["show_overlays"]) {
+				rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
+				line(display_buffer, GetCenter(left_stripe), GetCenter(right_stripe), Scalar(0, 0, 255), 3, CV_AA); 
+			}
+
+			//TODO: Add this to the config file stuff
+			rectangle(display_buffer, left_hist_portion_Rect, Scalar(255, 0, 255), 2);  
+			rectangle(display_buffer, right_hist_portion_Rect, Scalar(255,0, 255), 2);  
+
+			histogram_goal_center->insert_histogram_data(&goal_center_Rect, video_interface->largeDepthCV);
+			hist_inner_roi_left->insert_histogram_data(&left_hist_portion_Rect, video_interface->largeDepthCV);
+			hist_inner_roi_right->insert_histogram_data(&right_hist_portion_Rect, video_interface->largeDepthCV);
+
+			//TODO: Document the hell out of this, and reorganize (Class?)
+			//int depth = histogram_goal_center->take_percentile((*imgproc_save)["histogram_percentile"]);
+
+			int depth_left_Rect = hist_inner_roi_left->take_percentile((*imgproc_save)["histogram_percentile"]);
+			int depth_right_Rect = hist_inner_roi_right->take_percentile((*imgproc_save)["histogram_percentile"]);
+
+			int x_center_left_Rect 	= MidPoint(left_hist_portion_Rect.tl(),  left_hist_portion_Rect.br()).x;
+			int x_center_right_Rect = MidPoint(right_hist_portion_Rect.tl(), right_hist_portion_Rect.br()).x;
 
 
-		int distance_to_screen_edge = (*video_interface_save)["bgr_width"] / 2;
+			int distance_to_screen_edge = (*video_interface_save)["bgr_width"] / 2;
 
-		//Eight and a quarter inches is how far apart the centers of the stripes should be, by spec
-		int eight_and_quarter_inches_in_px = PointDistance(GetCenter(left_stripe), GetCenter(right_stripe));
-		float px_per_inch = (float)eight_and_quarter_inches_in_px / 8.25; 
+			//Eight and a quarter inches is how far apart the centers of the stripes should be, by spec
+			int eight_and_quarter_inches_in_px = PointDistance(GetCenter(left_stripe), GetCenter(right_stripe));
+			float px_per_inch = (float)eight_and_quarter_inches_in_px / 8.25; 
 
-		//Left and right center x positions in inches 
-		float x_center_left_Rect_inch		 = x_center_left_Rect	 / px_per_inch;
-		float x_center_right_Rect_inch	 = x_center_right_Rect / px_per_inch;
+			//Left and right center x positions in inches 
+			float x_center_left_Rect_inch		 = x_center_left_Rect	 / px_per_inch;
+			float x_center_right_Rect_inch	 = x_center_right_Rect / px_per_inch;
 
-		//Left and right center depths in inches
-		float depth_left_Rect_inch 	= 	(float)depth_left_Rect 	* 0.0393701f;
-		float depth_right_Rect_inch 	= 	(float)depth_right_Rect * 0.0393701f;
+			//Left and right center depths in inches
+			float depth_left_Rect_inch 	= 	(float)depth_left_Rect 	* 0.0393701f;
+			float depth_right_Rect_inch 	= 	(float)depth_right_Rect * 0.0393701f;
 
-		float depth_x_slope = (float)(depth_right_Rect_inch - depth_left_Rect_inch) / (float)(x_center_right_Rect_inch - x_center_left_Rect_inch); 
+			//Slope from one side of the goal to the other as alighned too our plane
+			float depth_x_slope = (float)(depth_right_Rect_inch - depth_left_Rect_inch) / (float)(x_center_right_Rect_inch - x_center_left_Rect_inch); 
 
-		int magnitude_x_px = MidPoint(GetCenter(left_stripe), GetCenter(right_stripe)).x - distance_to_screen_edge;
-		float magnitude_x_inch = magnitude_x_px / px_per_inch;
+			int magnitude_x_px = MidPoint(GetCenter(left_stripe), GetCenter(right_stripe)).x - distance_to_screen_edge;
+			float magnitude_x_inch = magnitude_x_px / px_per_inch;
 
-		float angle = (atanf(depth_x_slope) * 180.0f) / PI;
+			float angle = (atanf(depth_x_slope) * 180.0f) / PI;
 
-		root_node.append_attribute("x_offset_to_target") = magnitude_x_inch;
-		if (depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
-			distance_median->insert_median_data((depth_left_Rect_inch + depth_left_Rect_inch) / 2);
-			angle_median->insert_median_data(angle);
-			root_node.append_attribute("distance_to_target") = distance_median->compute_median();
-			root_node.append_attribute("angle") = angle_median->compute_median(); 
+			root_node.append_attribute("x_offset_to_target") = magnitude_x_inch;
+			if (depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
+				distance_median->insert_median_data((depth_left_Rect_inch + depth_left_Rect_inch) / 2);
+				angle_median->insert_median_data(angle);
+				root_node.append_attribute("distance_to_target") = distance_median->compute_median();
+				root_node.append_attribute("angle") = angle_median->compute_median(); 
+			} else {
+				root_node.append_attribute("distance_to_target") = 99999;
+				root_node.append_attribute("angle") = 99999;
+			}
 		} else {
-			root_node.append_attribute("distance_to_target") = 99999;
-			root_node.append_attribute("angle") = 99999;
+			//TODO: Move this into the selection sorter, or at least notify the rio!!
+			std::cerr << "Both tapes are too small when cut!" << std::endl;
+			//TODO: Cut the tapes off by the depth area and not by the side of the color image (In HD, the color image is much wider!)
 		}
 		root_node.append_attribute("timestamp") = video_interface->GetTimeStamp();
 
@@ -197,7 +223,7 @@ void PegFinder::ProcessFrame() {
 
 	//TODO: Make another mat to display on instead of writing over the video_interface's mat
 	if ((*application_options)["show_rgb"]) {
-		imshow("COLOR", display_buffer);
+		imshow("Color", display_buffer);
 	}
 }
 

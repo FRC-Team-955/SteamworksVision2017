@@ -38,8 +38,8 @@ VideoInterface* dummy;
 
 pugi::xml_document send_doc;
 
-//char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
-char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
+char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
+//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
 
 void InitializeSaveFile () {
 	//File saving fields
@@ -94,11 +94,12 @@ void InitializeSaveFile () {
 	}; 
 
 	imgproc_save_peg = {
-		{"morph_open"				,	5		},
-		{"morph_close"				,	5		},
-		{"histogram_min"			,	1		}, 
-		{"histogram_max"			,	50000	},
-		{"histogram_percentile"	,	10		}
+		{"morph_open"					,	5		},
+		{"morph_close"					,	5		},
+		{"histogram_min"				,	1		}, 
+		{"histogram_max"				,	50000	},
+		{"histogram_percentile"		,	10		},
+		{"sample_slicing_area_min"	,	2000	}
 	};
 
 	imgproc_save_boiler = {
@@ -143,28 +144,61 @@ void InitializeSaveFile () {
 
 //TODO: Move this stuff to it's own class or make it less icky somehow
 pthread_mutex_t xml_mutex;
+pthread_mutex_t mode_mutex;
 pthread_t xml_thread;
 PegFinder* finder;
 bool use_waitkey = false;
 std::string out_string = "";
+std::string mode = "Peg\n";
 
 void* finder_thread (void* arg) {
 	std::stringstream ss;
+	std::string tempmode = "";
+	std::string lastmode = "";
 	while (true) {
 		sensor->GrabFrames();	
+
 		ss.str("");
 		ss.clear();
 		send_doc.reset();
-		finder->ProcessFrame();
-		send_doc.save(ss, "", pugi::format_raw);
 
-		pthread_mutex_lock(&xml_mutex);
-		ss << std::endl;
-		out_string = ss.str();
-		pthread_mutex_unlock(&xml_mutex);
+		pthread_mutex_lock(&mode_mutex);
+		tempmode = mode;
+		pthread_mutex_unlock(&mode_mutex);
 
-		if (use_waitkey) {cv::waitKey(10);};
+		if (tempmode == "Peg\n") {
+			finder->ProcessFrame();
+			send_doc.save(ss, "", pugi::format_raw);
 
+			pthread_mutex_lock(&xml_mutex);
+			ss << std::endl;
+			out_string = ss.str();
+			pthread_mutex_unlock(&xml_mutex);
+			if (use_waitkey) {cv::waitKey(10);};
+		} else if (tempmode == "Live\n") {
+			//TODO: Use a universal config system to determine the names of OpenCV windows
+			imshow ("Color", *sensor->bgrmatCV);	
+			out_string = "Live Mode\n";
+			cv::waitKey(1);
+		} else {
+			pthread_mutex_lock(&mode_mutex);
+			mode = lastmode;
+			pthread_mutex_unlock(&mode_mutex);
+		}
+
+		//std::cerr << "Mode: " << tempmode << std::endl;
+
+		//TODO: Fix this on the tegra so we don't have to have system calls so we don't have issues using the -d agruement between the two cameras!
+		if (lastmode != tempmode) {
+			if (tempmode == "Peg") {
+				//			system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
+				//			system(("v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(video_interface_save["exposure"]) + " -d 2").c_str());
+			} else if (tempmode == "Live") {
+				//			system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
+				//			system("v4l2-ctl --set-ctrl exposure_absolute=100 -d 2");
+			}
+		}
+		lastmode = tempmode;
 	}
 	return NULL;
 }
@@ -182,7 +216,7 @@ void ServerMode() {
 			serial
 			); 
 
-	use_waitkey = 
+	use_waitkey = //Maximum performance
 		!application_options["static_test"			] ||		
 		!application_options["show_sliders_peg"	] ||
 		!application_options["show_sliders_boiler"] ||
@@ -193,9 +227,6 @@ void ServerMode() {
 
 
 	Networking::Server* serv = new Networking::Server(application_options["server_port"]);			
-
-	//cv::Mat display_out;
-	//display_out = *sensor->bgrmatCV;
 
 	finder = new PegFinder(
 			sensor							, 
@@ -218,7 +249,10 @@ void ServerMode() {
 		serv->WaitForClientConnection();
 		while (serv->GetNetState()) {
 			//std::cerr << "Client Message: " << 
-			serv->WaitForClientMessage();
+			std::string tempmode = serv->WaitForClientMessage();
+			pthread_mutex_lock(&mode_mutex);
+			mode = tempmode;
+			pthread_mutex_unlock(&mode_mutex);
 
 			pthread_mutex_lock(&xml_mutex);
 			serv->SendClientMessage(out_string.c_str());
@@ -276,8 +310,6 @@ void TestLive() {
 			serial
 			); 
 
-	//sensor->SetColorExposure(video_interface_save["exposure"]);
-
 	PegFinder* finder = new PegFinder(
 			sensor							, 
 			&sliders_save_peg				,	
@@ -321,14 +353,14 @@ void TestLive() {
 }
 
 /*
-std::string getDateFileName () {
+	std::string getDateFileName () {
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 	std::stringstream ss; //Dumb hack
 	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
 	return ss.str();
-}
-*/
+	}
+	*/
 
 int main (int argc, char** argv) {
 	//Command args
@@ -365,7 +397,7 @@ int main (int argc, char** argv) {
 	interface_peg->UpdateSliders();
 	interface_boiler->UpdateSliders();
 
-	//TODO: Move this later, change it on live view
+	//TODO: DO THIS USING API CALLS EWW
 	system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
 	system(("v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(video_interface_save["exposure"]) + " -d 2").c_str());
 
