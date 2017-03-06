@@ -62,8 +62,8 @@ void InitializeSaveFile () {
 		{"val_slider_upper"	,	256	},
 		{"area_slider"			,	5000	}
 	};
-
-	sliders_save_boiler  = {  
+	/*
+		sliders_save_boiler  = {  
 		{"hue_slider_lower"	,	179	}, 
 		{"hue_slider_upper"	,	179	},
 		{"sat_slider_lower"	,	256	},
@@ -71,9 +71,9 @@ void InitializeSaveFile () {
 		{"val_slider_lower"	,	256	},
 		{"val_slider_upper"	,	256	},
 		{"area_slider"			,	0		}
-	};
+		};
 
-	sliders_save_boiler_limits  = {  
+		sliders_save_boiler_limits  = {  
 		{"hue_slider_lower"	,	179	}, 
 		{"hue_slider_upper"	,	179	},
 		{"sat_slider_lower"	,	256	},
@@ -81,7 +81,8 @@ void InitializeSaveFile () {
 		{"val_slider_lower"	,	256	},
 		{"val_slider_upper"	,	256	},
 		{"area_slider"			,	5000	}
-	};
+		};
+	*/
 
 	video_interface_save = { 
 		{"depth_width"			,	480	}, 
@@ -102,12 +103,14 @@ void InitializeSaveFile () {
 		{"sample_slicing_area_min"	,	2000	}
 	};
 
+	/*
 	imgproc_save_boiler = {
 		{"morph_open"				,	5		},
 		{"histogram_min"			,	1		}, 
 		{"histogram_max"			,	50000	},
 		{"histogram_percentile"	,	10		}
 	};
+	*/
 
 	application_options = {
 		{"static_test"				,	0		}, 
@@ -122,11 +125,11 @@ void InitializeSaveFile () {
 
 	saved_fields = {
 		{"Sliders_Limits_Peg"		, &sliders_save_peg_limits		},
-		{"Sliders_Limits_Boiler"	, &sliders_save_boiler_limits	},
+		//{"Sliders_Limits_Boiler"	, &sliders_save_boiler_limits	},
 		{"Sliders_Peg"					, &sliders_save_peg				},
-		{"Sliders_Boiler"				, &sliders_save_boiler			},
+		//{"Sliders_Boiler"				, &sliders_save_boiler			},
 		{"Imgproc_const_Peg"			, &imgproc_save_peg				},
-		{"Imgproc_const_Boiler"		, &imgproc_save_boiler			},
+		//{"Imgproc_const_Boiler"		, &imgproc_save_boiler			},
 		{"Application_Options"		, &application_options			},
 		{"Sensor"						, &video_interface_save	 		}  
 	};

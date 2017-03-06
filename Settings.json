@@ -1,71 +1,47 @@
 {
-	"Application_Options": {
-		"server_port": 5806,
-		"show_HSV": 0,
-		"show_depth": 0,
-		"show_overlays": 0,
-		"show_rgb": 1,
-		"show_sliders_boiler": 0,
-		"show_sliders_peg": 0,
-		"static_test": 2
-	},
-	"Imgproc_const_Boiler": {
-		"histogram_max": 50000,
-		"histogram_min": 1,
-		"histogram_percentile": 10,
-		"morph_open": 5
-	},
-	"Imgproc_const_Peg": {
-		"histogram_max": 50000,
-		"sample_slicing_area_min":	2000,
-		"histogram_min": 1,
-		"histogram_percentile": 10,
-		"morph_close": 5,
-		"morph_open": 5
-	},
-	"Sensor": {
-		"bgr_framerate": 60,
-		"bgr_height": 480,
-		"bgr_width": 640,
-		"depth_framerate": 60,
-		"depth_height": 360,
-		"depth_width": 480,
-		"exposure": 20
-	},
-	"Sliders_Boiler": {
-		"area_slider": 0,
-		"hue_slider_lower": 179,
-		"hue_slider_upper": 179,
-		"sat_slider_lower": 256,
-		"sat_slider_upper": 256,
-		"val_slider_lower": 256,
-		"val_slider_upper": 256
-	},
-	"Sliders_Limits_Boiler": {
-		"area_slider": 5000,
-		"hue_slider_lower": 179,
-		"hue_slider_upper": 179,
-		"sat_slider_lower": 256,
-		"sat_slider_upper": 256,
-		"val_slider_lower": 256,
-		"val_slider_upper": 256
-	},
-	"Sliders_Limits_Peg": {
-		"area_slider": 5000,
-		"hue_slider_lower": 179,
-		"hue_slider_upper": 179,
-		"sat_slider_lower": 256,
-		"sat_slider_upper": 256,
-		"val_slider_lower": 256,
-		"val_slider_upper": 256
-	},
-	"Sliders_Peg": {
-		"area_slider": 363,
-		"hue_slider_lower": 44,
-		"hue_slider_upper": 113,
-		"sat_slider_lower": 140,
-		"sat_slider_upper": 256,
-		"val_slider_lower": 86,
-		"val_slider_upper": 256
-	}
+    "Application_Options": {
+        "server_port": 5806,
+        "show_HSV": 0,
+        "show_depth": 0,
+        "show_overlays": 0,
+        "show_rgb": 0,
+        "show_sliders_boiler": 0,
+        "show_sliders_peg": 0,
+        "static_test": 0
+    },
+    "Imgproc_const_Peg": {
+        "histogram_max": 50000,
+        "histogram_min": 1,
+        "histogram_percentile": 40,
+        "morph_close": 5,
+        "morph_open": 5,
+        "sample_slicing_area_min": 2000
+    },
+    "Sensor": {
+        "bgr_framerate": 30,
+        "bgr_height": 1080,
+        "bgr_width": 1920,
+        "depth_framerate": 30,
+        "depth_height": 360,
+        "depth_width": 480,
+        "exposure": 30
+    },
+    "Sliders_Limits_Peg": {
+        "area_slider": 5000,
+        "hue_slider_lower": 179,
+        "hue_slider_upper": 179,
+        "sat_slider_lower": 256,
+        "sat_slider_upper": 256,
+        "val_slider_lower": 256,
+        "val_slider_upper": 256
+    },
+    "Sliders_Peg": {
+		 "area_slider": 363,
+		 "hue_slider_lower": 44,
+		 "hue_slider_upper": 113,
+		 "sat_slider_lower": 140,
+		 "sat_slider_upper": 256,
+		 "val_slider_lower": 86,
+		 "val_slider_upper": 256
+	 }
 }
