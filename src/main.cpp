@@ -333,17 +333,33 @@ void TestLive() {
 	sensor->GrabFrames(); //Initialize largedepthCV
 	VideoWriter writer;
 	//writer.open(getDateFileName(), CV_FOURCC('M', 'J', 'P', 'G'), 30, sensor->largeDepthCV->size(), true);
-	Mat img8c3 (
+	Mat encoded_buffer (
 			video_interface_save["bgr_height"],
 			video_interface_save["bgr_width"], 
 			CV_8UC3);
+
+	Mat decoded_buffer (
+			video_interface_save["bgr_height"],
+			video_interface_save["bgr_width"], 
+			CV_16UC1);
 
 	//MultiBitEncoder* encoder = new MultiBitEncoder(1, &img8c3, sensor->largeDepthCV);
 
 	while(true) {
 		sensor->GrabFrames();
-		finder->ProcessFrame(); //TODO: Make this less self-contained!
-		send_doc.save(std::cout);
+		//*decoded_buffer.data = *(*sensor->largeDepthCV).data; 
+		memcpy(encoded_buffer.data, (*sensor->largeDepthCV).data, sizeof(unsigned char) * decoded_buffer.rows * decoded_buffer.cols);
+		memcpy(decoded_buffer.data, encoded_buffer.data, sizeof(unsigned char) * decoded_buffer.rows * decoded_buffer.cols);
+
+		///finder->ProcessFrame(); //TODO: Make this less self-contained!
+		///send_doc.save(std::cout);
+		//imshow("Depth", decoded_buffer * 7);
+		//imshow("Depth2", *sensor->largeDepthCV * 7);
+		unsigned char* p = (*sensor->bgrmatCV).data;
+		while (p < (*sensor->bgrmatCV).dataend) {
+			p++;
+			p++;
+		}
 		cv::waitKey(1);
 	}
 }
@@ -398,10 +414,6 @@ int main (int argc, char** argv) {
 	//TODO: DO THIS USING API CALLS EWW
 	system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
 	system(("v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(video_interface_save["exposure"]) + " -d 2").c_str());
-
-
-
-
 
 	switch (application_options["static_test"]) {
 		case 2:

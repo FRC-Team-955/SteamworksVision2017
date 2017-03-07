@@ -7,7 +7,7 @@
 			"show_rgb": 0,
 			"show_sliders_boiler": 0,
 			"show_sliders_peg": 0,
-			"static_test": 0
+			"static_test": 2
 	},
 		"Imgproc_const_Peg": {
 			"histogram_max": 50000,
