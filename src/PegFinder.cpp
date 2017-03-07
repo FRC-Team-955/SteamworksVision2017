@@ -89,6 +89,7 @@ void PegFinder::ProcessFrame() {
 
 	if (stripes.size() == 1) {
 		root_node.append_attribute("stripes_found") = "one";
+		root_node.append_attribute("stripe_width") = stripes.at(0)->width;
 	}
 
 	if (!stripes.size()) {
@@ -110,8 +111,8 @@ void PegFinder::ProcessFrame() {
 		left_hist_portion_Rect.x  -= left_hist_portion_Rect.width  * 1; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
 		right_hist_portion_Rect.x += right_hist_portion_Rect.width * 1;
 
-		left_hist_portion_Rect.y  -= left_hist_portion_Rect.height  * 3; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
-		right_hist_portion_Rect.y -= right_hist_portion_Rect.height * 3;
+		left_hist_portion_Rect.y  -= left_hist_portion_Rect.height  * 2; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
+		right_hist_portion_Rect.y -= right_hist_portion_Rect.height * 2;
 
 		//Cut off the side of the box when it hits the edge instead of trying to sample outside of the image (That breaks things)
 		if (left_hist_portion_Rect.y < 0) {
@@ -210,7 +211,10 @@ void PegFinder::ProcessFrame() {
 			}
 		} else {
 			//TODO: Move this into the selection sorter, or at least notify the rio!!
-			std::cerr << "Both tapes are too small when cut!" << std::endl;
+			//std::cerr << "Both tapes are too small when cut!" << std::endl;
+			root_node.remove_attribute("stripes_found");
+			root_node.append_attribute("stripes_found") = "one";
+			root_node.append_attribute("stripe_width") = (left_hist_portion_Rect.width + right_hist_portion_Rect.width) / 2;
 			//TODO: Cut the tapes off by the depth area and not by the side of the color image (In HD, the color image is much wider!)
 		}
 		root_node.append_attribute("timestamp") = video_interface->GetTimeStamp();

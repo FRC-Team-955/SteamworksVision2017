@@ -20,18 +20,18 @@ std::unordered_map<std::string, SaveEntry*> saved_fields;
 
 SaveEntry application_options;
 SaveEntry imgproc_save_peg;
-SaveEntry imgproc_save_boiler;
+//SaveEntry imgproc_save_boiler;
 SaveEntry video_interface_save;
 SaveEntry sliders_save_peg_limits;
-SaveEntry sliders_save_boiler_limits;
+//SaveEntry sliders_save_boiler_limits;
 SaveEntry sliders_save_peg;
-SaveEntry sliders_save_boiler;
+//SaveEntry sliders_save_boiler;
 
 char* save_file_dir;
 Saving* save_file;
 
 Sliders* interface_peg;
-Sliders* interface_boiler;
+//Sliders* interface_boiler;
 
 Realsense* sensor;
 VideoInterface* dummy;
@@ -40,6 +40,8 @@ pugi::xml_document send_doc;
 
 //char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
 char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
+
+bool use_waitkey = false;
 
 void InitializeSaveFile () {
 	//File saving fields
@@ -115,7 +117,7 @@ void InitializeSaveFile () {
 	application_options = {
 		{"static_test"				,	0		}, 
 		{"show_sliders_peg"		,	1		}, 
-		{"show_sliders_boiler"	,	1		}, 
+		//{"show_sliders_boiler"	,	1		}, 
 		{"show_rgb"					,	1		}, 
 		{"show_depth"				,	1		}, 
 		{"show_HSV"					,	1		}, 
@@ -142,6 +144,14 @@ void InitializeSaveFile () {
 		std::cerr << "Finished creating defaults." << std::endl;
 	}
 
+	use_waitkey = //Maximum performance
+		!application_options["static_test"			] ||		
+		!application_options["show_sliders_peg"	] ||
+		//!application_options["show_sliders_boiler"] ||
+		!application_options["show_rgb"				] || 
+		!application_options["show_depth"			] ||
+		!application_options["show_HSV"				] || 
+		!application_options["show_overlays"		] ;
 }
 
 
@@ -150,7 +160,6 @@ pthread_mutex_t xml_mutex;
 pthread_mutex_t mode_mutex;
 pthread_t xml_thread;
 PegFinder* finder;
-bool use_waitkey = false;
 std::string out_string = "";
 std::string mode = "Peg\n";
 
@@ -173,8 +182,8 @@ void* finder_thread (void* arg) {
 			finder->ProcessFrame();
 			send_doc.save(ss, "", pugi::format_raw);
 
-			pthread_mutex_lock(&xml_mutex);
 			ss << std::endl;
+			pthread_mutex_lock(&xml_mutex);
 			out_string = ss.str();
 			pthread_mutex_unlock(&xml_mutex);
 			if (use_waitkey) {cv::waitKey(10);};
@@ -187,6 +196,9 @@ void* finder_thread (void* arg) {
 			pthread_mutex_lock(&mode_mutex);
 			mode = lastmode;
 			pthread_mutex_unlock(&mode_mutex);
+			pthread_mutex_lock(&xml_mutex);
+			out_string = "Invalid Mode!\n";
+			pthread_mutex_unlock(&xml_mutex);
 		}
 
 		//std::cerr << "Mode: " << tempmode << std::endl;
@@ -218,15 +230,6 @@ void ServerMode() {
 			video_interface_save["bgr_framerate"	],
 			serial
 			); 
-
-	use_waitkey = //Maximum performance
-		!application_options["static_test"			] ||		
-		!application_options["show_sliders_peg"	] ||
-		!application_options["show_sliders_boiler"] ||
-		!application_options["show_rgb"				] || 
-		!application_options["show_depth"			] ||
-		!application_options["show_HSV"				] || 
-		!application_options["show_overlays"		] ;
 
 
 	Networking::Server* serv = new Networking::Server(application_options["server_port"]);			
@@ -324,16 +327,6 @@ void TestLive() {
 			);
 
 	//TODO: Move this to main() 
-	bool use_waitkey = 
-		!application_options["static_test"			] ||		
-		!application_options["show_sliders_peg"	] ||
-		!application_options["show_sliders_boiler"] ||
-		!application_options["show_rgb"				] || 
-		!application_options["show_depth"			] ||
-		!application_options["show_HSV"				] || 
-		!application_options["show_overlays"		] ;
-
-	std::vector<uchar> buff;
 
 	//Networking::Server* serv = new Networking::Server(2345);
 	//serv->WaitForClientConnection();
@@ -387,22 +380,28 @@ int main (int argc, char** argv) {
 	}
 
 	Sliders* interface_peg = new Sliders("Peg_Finder_Sliders", &sliders_save_peg, &sliders_save_peg_limits, save_file); 
-	Sliders* interface_boiler = new Sliders("Boiler_Finder_Sliders", &sliders_save_boiler, &sliders_save_boiler_limits, save_file); 
+	//Sliders* interface_boiler = new Sliders("Boiler_Finder_Sliders", &sliders_save_boiler, &sliders_save_boiler_limits, save_file); 
 
 	if (application_options["show_sliders_peg"]) {
 		interface_peg->InitializeSliders();
 	}
 
-	if (application_options["show_sliders_boiler"]) {
+	/*
+		if (application_options["show_sliders_boiler"]) {
 		interface_boiler->InitializeSliders();
-	}
+		}
+		*/
 
 	interface_peg->UpdateSliders();
-	interface_boiler->UpdateSliders();
+	//interface_boiler->UpdateSliders();
 
 	//TODO: DO THIS USING API CALLS EWW
 	system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
 	system(("v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(video_interface_save["exposure"]) + " -d 2").c_str());
+
+
+
+
 
 	switch (application_options["static_test"]) {
 		case 2:
