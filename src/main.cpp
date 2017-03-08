@@ -12,7 +12,6 @@
 #include <pthread.h>
 #include <vector>
 #include <sys/stat.h>
-#include <MultiBitEncoder.hpp>
 
 using SaveEntry = std::unordered_map<std::string, int>;
 
@@ -331,8 +330,7 @@ void TestLive() {
 	//Networking::Server* serv = new Networking::Server(2345);
 	//serv->WaitForClientConnection();
 	sensor->GrabFrames(); //Initialize largedepthCV
-	VideoWriter writer;
-	//writer.open(getDateFileName(), CV_FOURCC('M', 'J', 'P', 'G'), 30, sensor->largeDepthCV->size(), true);
+
 	Mat encoded_buffer (
 			video_interface_save["bgr_height"],
 			video_interface_save["bgr_width"], 
@@ -343,23 +341,36 @@ void TestLive() {
 			video_interface_save["bgr_width"], 
 			CV_16UC1);
 
+	VideoWriter color_writer;
+	VideoWriter depth_writer;
+	color_writer.open("rgbcap.avi", VideoWriter::fourcc('M','J','P','G'), 30, (*sensor->rgbmatCV).size(), true);
+	depth_writer.open("depth.avi", VideoWriter::fourcc('M','J','P','G'), 30, encoded_buffer.size(), true);
+
 	//MultiBitEncoder* encoder = new MultiBitEncoder(1, &img8c3, sensor->largeDepthCV);
 
 	while(true) {
 		sensor->GrabFrames();
-		//*decoded_buffer.data = *(*sensor->largeDepthCV).data; 
-		memcpy(encoded_buffer.data, (*sensor->largeDepthCV).data, sizeof(unsigned char) * decoded_buffer.rows * decoded_buffer.cols);
-		memcpy(decoded_buffer.data, encoded_buffer.data, sizeof(unsigned char) * decoded_buffer.rows * decoded_buffer.cols);
+		memcpy(encoded_buffer.data, 
+				(*sensor->largeDepthCV).data, 
+				sizeof(unsigned short) * encoded_buffer.rows * encoded_buffer.cols);
+		memcpy(decoded_buffer.data, 
+				encoded_buffer.data, 
+				sizeof(unsigned short) * decoded_buffer.rows * decoded_buffer.cols);
 
 		///finder->ProcessFrame(); //TODO: Make this less self-contained!
 		///send_doc.save(std::cout);
-		//imshow("Depth", decoded_buffer * 7);
-		//imshow("Depth2", *sensor->largeDepthCV * 7);
-		unsigned char* p = (*sensor->bgrmatCV).data;
-		while (p < (*sensor->bgrmatCV).dataend) {
-			p++;
-			p++;
-		}
+		//Put these params in the config file!!
+
+		// COMPRESSING MAKES IT WAAY FASTER!!
+		//decoded_buffer = (*sensor->bgrmatCV / 32);
+		//cvtColor(decoded_buffer, decoded_buffer, CV_BGR2GRAY);
+		//imshow("Color", decoded_buffer * 32);
+
+		//imshow("Color", decoded_buffer * 7);
+		color_writer.write(*sensor->bgrmatCV);
+		depth_writer.write(encoded_buffer);
+		//imshow("Encoded", encoded_buffer);
+
 		cv::waitKey(1);
 	}
 }
