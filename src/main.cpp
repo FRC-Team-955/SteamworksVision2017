@@ -353,18 +353,18 @@ void TestLive() {
 		memcpy(encoded_buffer.data, 
 				(*sensor->largeDepthCV).data, 
 				sizeof(unsigned short) * encoded_buffer.rows * encoded_buffer.cols);
-		memcpy(decoded_buffer.data, 
-				encoded_buffer.data, 
-				sizeof(unsigned short) * decoded_buffer.rows * decoded_buffer.cols);
+		//memcpy(decoded_buffer.data, 
+		//		encoded_buffer.data, 
+		//		sizeof(unsigned short) * decoded_buffer.rows * decoded_buffer.cols);
 
 		///finder->ProcessFrame(); //TODO: Make this less self-contained!
 		///send_doc.save(std::cout);
 		//Put these params in the config file!!
 
 		// COMPRESSING MAKES IT WAAY FASTER!!
-		//decoded_buffer = (*sensor->bgrmatCV / 32);
-		//cvtColor(decoded_buffer, decoded_buffer, CV_BGR2GRAY);
-		//imshow("Color", decoded_buffer * 32);
+		decoded_buffer = (*sensor->bgrmatCV / 32);
+		cvtColor(decoded_buffer, decoded_buffer, CV_BGR2GRAY);
+		imshow("Color", decoded_buffer * 32);
 
 		//imshow("Color", decoded_buffer * 7);
 		color_writer.write(*sensor->bgrmatCV);
