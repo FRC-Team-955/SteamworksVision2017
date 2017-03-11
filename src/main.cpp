@@ -299,9 +299,15 @@ void TestStatic(char* rgb_directory, char* depth_directory) {
 	}
 }
 
+std::string getDateFileName () {
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	std::stringstream ss; //Dumb hack
+	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
+	return ss.str();
+}
 
-Mat small;
-void TestLive() {
+void TestLive(char* dir) {
 	//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
 
 
@@ -343,8 +349,9 @@ void TestLive() {
 
 	VideoWriter color_writer;
 	VideoWriter depth_writer;
-	color_writer.open("rgbcap.avi", VideoWriter::fourcc('M','J','P','G'), 30, (*sensor->rgbmatCV).size(), true);
-	depth_writer.open("depth.avi", VideoWriter::fourcc('M','J','P','G'), 30, encoded_buffer.size(), true);
+	std::string filename = getDateFileName();
+	color_writer.open(dir + filename + "_rgbcap.avi", VideoWriter::fourcc('M','J','P','G'), 30, (*sensor->rgbmatCV).size(), true);
+	depth_writer.open(dir + filename + "_depth.avi", VideoWriter::fourcc('M','J','P','G'), 30, encoded_buffer.size(), true);
 
 	//MultiBitEncoder* encoder = new MultiBitEncoder(1, &img8c3, sensor->largeDepthCV);
 
@@ -375,16 +382,6 @@ void TestLive() {
 	}
 }
 
-/*
-	std::string getDateFileName () {
-	auto t = std::time(nullptr);
-	auto tm = *std::localtime(&t);
-	std::stringstream ss; //Dumb hack
-	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
-	return ss.str();
-	}
-	*/
-
 int main (int argc, char** argv) {
 	//Command args
 	if (argc < 2) {
@@ -402,6 +399,15 @@ int main (int argc, char** argv) {
 			std::cerr << "Test mode active, requires 2 additional arguements." << 
 				"\nUsage" << 
 				"\n\t" << argv[0] << " <Settings.json> <RGB.png> <Depth.exr>" << std::endl;
+			return -1;
+		}
+	}
+
+	if (application_options["static_test"] == 2) {
+		if (argc < 3) {
+			std::cerr << "Test mode active, requires 1 additional arguement." << 
+				"\nUsage" << 
+				"\n\t" << argv[0] << " <Settings.json> <Media Save Dir>" << std::endl;
 			return -1;
 		}
 	}
@@ -428,7 +434,7 @@ int main (int argc, char** argv) {
 
 	switch (application_options["static_test"]) {
 		case 2:
-			TestLive();
+			TestLive(argv[2]);
 		case 1:
 			TestStatic(argv[2], argv[3]);
 		default:

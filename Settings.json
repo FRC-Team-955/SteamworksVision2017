@@ -24,7 +24,7 @@
 			"depth_framerate": 60,
 			"depth_height": 360,
 			"depth_width": 480,
-			"exposure": 100
+			"exposure": 130
 		},
 		"Sliders_Limits_Peg": {
 			"area_slider": 5000,
