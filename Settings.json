@@ -6,8 +6,7 @@
 			"show_overlays": 0,
 			"show_rgb": 0,
 			"show_sliders_boiler": 0,
-			"show_sliders_peg": 0,
-			"static_test": 2
+			"show_sliders_peg": 0
 	},
 		"Imgproc_const_Peg": {
 			"histogram_max": 50000,

@@ -13,6 +13,7 @@
 #include <vector>
 #include <sys/stat.h>
 
+#define TEGRA FALSE
 using SaveEntry = std::unordered_map<std::string, int>;
 
 std::unordered_map<std::string, SaveEntry*> saved_fields;
@@ -38,7 +39,8 @@ VideoInterface* dummy;
 pugi::xml_document send_doc;
 
 //char serial[11] = "2391000767"; //It's 10 chars long, but there's also the null char
-char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
+//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
+char serial[11] = "2391016026"; //It's 10 chars long, but there's also the null char
 
 bool use_waitkey = false;
 
@@ -153,6 +155,14 @@ void InitializeSaveFile () {
 		!application_options["show_overlays"		] ;
 }
 
+std::string getDateFileName () {
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	std::stringstream ss; //Dumb hack
+	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
+	return ss.str();
+}
+
 
 //TODO: Move this stuff to it's own class or make it less icky somehow
 pthread_mutex_t xml_mutex;
@@ -163,9 +173,30 @@ std::string out_string = "";
 std::string mode = "Peg\n";
 
 void* finder_thread (void* arg) {
+	char* file_save_dir = (char*)arg;
 	std::stringstream ss;
 	std::string tempmode = "";
 	std::string lastmode = "";
+
+	Mat decoded_buffer (
+			video_interface_save["bgr_height"],
+			video_interface_save["bgr_width"], 
+			CV_16UC1);
+
+	Mat encoded_buffer (
+			video_interface_save["bgr_height"],
+			video_interface_save["bgr_width"], 
+			CV_8UC3);
+
+	VideoWriter color_writer;
+	VideoWriter depth_writer;
+	std::string filename = getDateFileName();
+	color_writer.open(file_save_dir + filename + "_rgbcap.avi", VideoWriter::fourcc('M','J','P','G'), 30, (*sensor->rgbmatCV).size(), true);
+	depth_writer.open(file_save_dir + filename + "_depth.avi", VideoWriter::fourcc('M','J','P','G'), 30, encoded_buffer.size(), true);
+
+	color_writer.write(*sensor->bgrmatCV);
+	depth_writer.write(encoded_buffer);
+
 	while (true) {
 		sensor->GrabFrames();	
 
@@ -179,45 +210,53 @@ void* finder_thread (void* arg) {
 
 		if (tempmode == "Peg\n") {
 			finder->ProcessFrame();
-			send_doc.save(ss, "", pugi::format_raw);
 
+			send_doc.save(ss, "", pugi::format_raw);
 			ss << std::endl;
+
 			pthread_mutex_lock(&xml_mutex);
 			out_string = ss.str();
 			pthread_mutex_unlock(&xml_mutex);
+
 			if (use_waitkey) {cv::waitKey(10);};
 		} else if (tempmode == "Live\n") {
 			//TODO: Use a universal config system to determine the names of OpenCV windows
-			imshow ("Color", *sensor->bgrmatCV);	
+			decoded_buffer = (*sensor->bgrmatCV / 32);
+			cvtColor(decoded_buffer, decoded_buffer, CV_BGR2GRAY);
+
+			imshow("Color", decoded_buffer * 32);
+
+			pthread_mutex_lock(&xml_mutex);
 			out_string = "Live Mode\n";
+			pthread_mutex_unlock(&xml_mutex);
+
 			cv::waitKey(1);
 		} else {
 			pthread_mutex_lock(&mode_mutex);
 			mode = lastmode;
 			pthread_mutex_unlock(&mode_mutex);
+
 			pthread_mutex_lock(&xml_mutex);
 			out_string = "Invalid Mode!\n";
 			pthread_mutex_unlock(&xml_mutex);
 		}
 
-		//std::cerr << "Mode: " << tempmode << std::endl;
-
-		//TODO: Fix this on the tegra so we don't have to have system calls so we don't have issues using the -d agruement between the two cameras!
+		//This will not work on the tegra, and it also has issues with camera ambiguity (because of the -d arguement doesn't include a serial number)
+#if !TEGRA
 		if (lastmode != tempmode) {
 			if (tempmode == "Peg") {
-				//			system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
-				//			system(("v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(video_interface_save["exposure"]) + " -d 2").c_str());
+				system(("v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(video_interface_save["exposure"]) + " -d 2").c_str());
 			} else if (tempmode == "Live") {
-				//			system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
-				//			system("v4l2-ctl --set-ctrl exposure_absolute=100 -d 2");
+				system("v4l2-ctl --set-ctrl exposure_absolute=130 -d 2");
 			}
 		}
+#endif
 		lastmode = tempmode;
 	}
 	return NULL;
 }
 
-void ServerMode() {
+void ServerMode(char* video_save_dir) {
 	std::stringstream ss;
 
 	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
@@ -229,7 +268,6 @@ void ServerMode() {
 			video_interface_save["bgr_framerate"	],
 			serial
 			); 
-
 
 	Networking::Server* serv = new Networking::Server(application_options["server_port"]);			
 
@@ -247,7 +285,7 @@ void ServerMode() {
 	send_doc.save(ss);
 
 	pthread_mutex_init(&xml_mutex, NULL);
-	pthread_create(&xml_thread, NULL, &finder_thread, NULL);
+	pthread_create(&xml_thread, NULL, &finder_thread, video_save_dir);
 
 	while(true) {
 		std::cerr << "Waiting for client connection on port " << application_options["server_port"] << std::endl;
@@ -270,123 +308,42 @@ void ServerMode() {
 
 }
 
-void TestStatic(char* rgb_directory, char* depth_directory) {
+/*
+	void TestStatic(char* rgb_directory, char* depth_directory) {
 	dummy = new DummyCamera(
-			rgb_directory,
-			depth_directory,
-			video_interface_save["depth_width"	], 
-			video_interface_save["depth_height"	],
-			video_interface_save["bgr_width"		],
-			video_interface_save["bgr_height"	] 
-			); 
+	rgb_directory,
+	depth_directory,
+	video_interface_save["depth_width"	], 
+	video_interface_save["depth_height"	],
+	video_interface_save["bgr_width"		],
+	video_interface_save["bgr_height"	] 
+	); 
 
 	PegFinder* finder = new PegFinder(
-			dummy								, 
-			&sliders_save_peg				,	
-			&sliders_save_peg_limits	,	
-			&imgproc_save_peg				,	
-			&application_options			,	
-			&video_interface_save		,
-			&send_doc
-			);
+	dummy								, 
+	&sliders_save_peg				,	
+	&sliders_save_peg_limits	,	
+	&imgproc_save_peg				,	
+	&application_options			,	
+	&video_interface_save		,
+	&send_doc
+	);
 
 
 	while(true) {
-		dummy->GrabFrames();
-		finder->ProcessFrame();
-		send_doc.save(std::cout);
-		cv::waitKey(10);
+	dummy->GrabFrames();
+	finder->ProcessFrame();
+	send_doc.save(std::cout);
+	cv::waitKey(10);
 	}
-}
-
-std::string getDateFileName () {
-	auto t = std::time(nullptr);
-	auto tm = *std::localtime(&t);
-	std::stringstream ss; //Dumb hack
-	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
-	return ss.str();
-}
-
-void TestLive(char* dir) {
-	//char serial[11] = "2391011471"; //It's 10 chars long, but there's also the null char
-
-
-	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
-			video_interface_save["depth_width"		], 
-			video_interface_save["depth_height"		],
-			video_interface_save["depth_framerate"	],
-			video_interface_save["bgr_width"			],
-			video_interface_save["bgr_height"		], 
-			video_interface_save["bgr_framerate"	],
-			serial
-			); 
-
-	PegFinder* finder = new PegFinder(
-			sensor							, 
-			&sliders_save_peg				,	
-			&sliders_save_peg_limits	,	
-			&imgproc_save_peg				,	
-			&application_options			,	
-			&video_interface_save		,
-			&send_doc
-			);
-
-	//TODO: Move this to main() 
-
-	//Networking::Server* serv = new Networking::Server(2345);
-	//serv->WaitForClientConnection();
-	sensor->GrabFrames(); //Initialize largedepthCV
-
-	Mat encoded_buffer (
-			video_interface_save["bgr_height"],
-			video_interface_save["bgr_width"], 
-			CV_8UC3);
-
-	Mat decoded_buffer (
-			video_interface_save["bgr_height"],
-			video_interface_save["bgr_width"], 
-			CV_16UC1);
-
-	VideoWriter color_writer;
-	VideoWriter depth_writer;
-	std::string filename = getDateFileName();
-	color_writer.open(dir + filename + "_rgbcap.avi", VideoWriter::fourcc('M','J','P','G'), 30, (*sensor->rgbmatCV).size(), true);
-	depth_writer.open(dir + filename + "_depth.avi", VideoWriter::fourcc('M','J','P','G'), 30, encoded_buffer.size(), true);
-
-	//MultiBitEncoder* encoder = new MultiBitEncoder(1, &img8c3, sensor->largeDepthCV);
-
-	while(true) {
-		sensor->GrabFrames();
-		memcpy(encoded_buffer.data, 
-				(*sensor->largeDepthCV).data, 
-				sizeof(unsigned short) * encoded_buffer.rows * encoded_buffer.cols);
-		//memcpy(decoded_buffer.data, 
-		//		encoded_buffer.data, 
-		//		sizeof(unsigned short) * decoded_buffer.rows * decoded_buffer.cols);
-
-		///finder->ProcessFrame(); //TODO: Make this less self-contained!
-		///send_doc.save(std::cout);
-		//Put these params in the config file!!
-
-		// COMPRESSING MAKES IT WAAY FASTER!!
-		decoded_buffer = (*sensor->bgrmatCV / 32);
-		cvtColor(decoded_buffer, decoded_buffer, CV_BGR2GRAY);
-		imshow("Color", decoded_buffer * 32);
-
-		//imshow("Color", decoded_buffer * 7);
-		color_writer.write(*sensor->bgrmatCV);
-		depth_writer.write(encoded_buffer);
-		//imshow("Encoded", encoded_buffer);
-
-		cv::waitKey(1);
 	}
-}
+	*/
 
 int main (int argc, char** argv) {
 	//Command args
-	if (argc < 2) {
+	if (argc < 3) {
 		std::cerr << "Usage: " <<
-			"\n\t " << argv[0] << " <Settings.json>" << std::endl;
+			"\n\t " << argv[0] << " <Settings.json> <Media Save Dir>" << std::endl;
 		return -1;
 	} 
 
@@ -394,53 +351,50 @@ int main (int argc, char** argv) {
 
 	InitializeSaveFile();
 
-	if (application_options["static_test"] == 1) {
+	/*
+		if (application_options["static_test"] == 1) {
 		if (argc < 4) {
-			std::cerr << "Test mode active, requires 2 additional arguements." << 
-				"\nUsage" << 
-				"\n\t" << argv[0] << " <Settings.json> <RGB.png> <Depth.exr>" << std::endl;
-			return -1;
+		std::cerr << "Test mode active, requires 2 additional arguements." << 
+		"\nUsage" << 
+		"\n\t" << argv[0] << " <Settings.json> <RGB.png> <Depth.exr>" << std::endl;
+		return -1;
 		}
-	}
+		}
 
-	if (application_options["static_test"] == 2) {
+		if (application_options["static_test"] == 2) {
 		if (argc < 3) {
-			std::cerr << "Test mode active, requires 1 additional arguement." << 
-				"\nUsage" << 
-				"\n\t" << argv[0] << " <Settings.json> <Media Save Dir>" << std::endl;
-			return -1;
+		std::cerr << "Test mode active, requires 1 additional arguement." << 
+		"\nUsage" << 
+		"\n\t" << argv[0] << " <Settings.json> <Media Save Dir>" << std::endl;
+		return -1;
 		}
-	}
+		}
+		*/
 
 	Sliders* interface_peg = new Sliders("Peg_Finder_Sliders", &sliders_save_peg, &sliders_save_peg_limits, save_file); 
-	//Sliders* interface_boiler = new Sliders("Boiler_Finder_Sliders", &sliders_save_boiler, &sliders_save_boiler_limits, save_file); 
 
 	if (application_options["show_sliders_peg"]) {
 		interface_peg->InitializeSliders();
 	}
 
-	/*
-		if (application_options["show_sliders_boiler"]) {
-		interface_boiler->InitializeSliders();
-		}
-		*/
-
 	interface_peg->UpdateSliders();
-	//interface_boiler->UpdateSliders();
 
 	//TODO: DO THIS USING API CALLS EWW
 	system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
 	system(("v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(video_interface_save["exposure"]) + " -d 2").c_str());
 
-	switch (application_options["static_test"]) {
+	ServerMode(argv[2]);
+	/*
+		switch (application_options["static_test"]) {
 		case 2:
-			TestLive(argv[2]);
+		TestLive(argv[2]);
 		case 1:
-			TestStatic(argv[2], argv[3]);
+		TestStatic(argv[2], argv[3]);
 		default:
-			ServerMode();
-			break;
-	}
+		ServerMode();
+		break;
+		}
+		*/
 
 }
 

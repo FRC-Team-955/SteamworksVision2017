@@ -9,4 +9,4 @@ mountdir=`echo $findmnt | awk '{print $1}'`/
 devicedir=`echo $findmnt | awk '{print $2}' | sed -e "s/.*:\(.*\)/\1/g"`
 echo $devicedir
 echo $mountdir
-sed release/compile_commands.json -i.bak -e "s:$devicedir:$mountdir:g"
+sed ../release/compile_commands.json -i.bak -e "s:$devicedir:$mountdir:g"
