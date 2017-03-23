@@ -155,13 +155,13 @@ void InitializeSaveFile () {
 		!application_options["show_overlays"		] ;
 }
 
-std::string getDateFileName () {
-	auto t = std::time(nullptr);
-	auto tm = *std::localtime(&t);
-	std::stringstream ss; //Dumb hack
-	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
-	return ss.str();
-}
+//std::string getDateFileName () {
+//	auto t = std::time(nullptr);
+//	auto tm = *std::localtime(&t);
+//	std::stringstream ss; //Dumb hack
+//	ss << std::put_time(&tm, "%a-%m-%d-%Y-%H-%M-%S");
+//	return ss.str();
+//}
 
 
 //TODO: Move this stuff to it's own class or make it less icky somehow
@@ -190,7 +190,7 @@ void* finder_thread (void* arg) {
 
 	VideoWriter color_writer;
 	VideoWriter depth_writer;
-	std::string filename = getDateFileName();
+	std::string filename = "TEST";//getDateFileName();
 	color_writer.open(file_save_dir + filename + "_rgbcap.avi", VideoWriter::fourcc('M','J','P','G'), 30, (*sensor->rgbmatCV).size(), true);
 	depth_writer.open(file_save_dir + filename + "_depth.avi", VideoWriter::fourcc('M','J','P','G'), 30, encoded_buffer.size(), true);
 
