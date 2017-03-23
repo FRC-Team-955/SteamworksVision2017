@@ -221,10 +221,11 @@ void* finder_thread (void* arg) {
 			if (use_waitkey) {cv::waitKey(10);};
 		} else if (tempmode == "Live\n") {
 			//TODO: Use a universal config system to determine the names of OpenCV windows
-			decoded_buffer = (*sensor->bgrmatCV / 32);
-			cvtColor(decoded_buffer, decoded_buffer, CV_BGR2GRAY);
+			//decoded_buffer = (*sensor->bgrmatCV / 32);
+			//cvtColor(decoded_buffer, decoded_buffer, CV_BGR2GRAY);
 
-			imshow("Color", decoded_buffer * 32);
+			//imshow("Color", decoded_buffer * 32);
+			imshow("Color", *sensor->bgrmatCV);
 
 			pthread_mutex_lock(&xml_mutex);
 			out_string = "Live Mode\n";

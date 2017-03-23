@@ -78,7 +78,8 @@ Realsense::~Realsense() {
 bool Realsense::GetDeviceBySerial(char* serial) {
 	for (int dev_idx = 0; dev_idx < ctx.get_device_count(); dev_idx++) {
 		rs::device* current_dev = ctx.get_device(dev_idx);
-		if (strcmp(current_dev->get_serial(), serial) == 0) {
+		std::cout << "Found device serial: " << current_dev->get_serial() << std::endl;
+		if (!strcmp(current_dev->get_serial(), serial)) {
 			dev = current_dev; 
 			return true;
 		}
