@@ -4,18 +4,21 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <math.h>
-#include <stdlib.h>
 #include <unordered_map> //Faster lookup times, O(1) instead of O(log n) !
 #include <Histogram.hpp>
-#include <ostream>
-#include <VideoInterface.hpp>
-#include <pugixml.hpp>
 #include <math.h>
 #include <MiscImgproc.hpp>
 #include <StripeMatcher.hpp>
 #include <Median.hpp>
+#include <Settings.hpp>
 
-#define PI 3.14159265
+#define DEBUG_SHOW_HSV 			FALSE	
+#define DEBUG_SHOW_DEPTH 		FALSE
+#define DEBUG_SHOW_OVERLAYS	TRUE
+#define DEBUG_SHOW_RGB			FALSE
+#define DEBUG_SHOW_SLIDERS		FALSE
+
+#define PI 3.141592653589
 
 using namespace cv;
 using namespace MiscImgproc;
@@ -24,11 +27,14 @@ using SaveEntry = std::unordered_map<std::string, int>;
 class PegFinder {
 	private:
 		//Runtime objects
-		VideoInterface* video_interface; 
+		Settings* sf;
+
 		Histogram<unsigned short>* histogram_goal_center;
 		Histogram<unsigned short>* hist_inner_roi_left;
 		Histogram<unsigned short>* hist_inner_roi_right;
+
 		StripeMatcher* matcher;	
+
 		Median<float>* distance_median;
 		Median<float>* angle_median;
 
@@ -41,35 +47,26 @@ class PegFinder {
 		Mat morph_close_struct_element;
 
 		Mat hsv_range_mask_filtered; 
-		
-		Mat display_buffer; 
 
 		std::vector< std::vector <Point> > contours;
 
-		//TODO: Deallocate all of that dedodated wam (mem leak!)
 		std::vector< Rect * > stripes;
 
-		pugi::xml_document* stream_doc; //For serialising to the RIO
-
-		SaveEntry *sliders_save				;	
-		SaveEntry *sliders_limits			;	
-		SaveEntry *imgproc_save				;	
-		SaveEntry *application_options	;	
-		SaveEntry *video_interface_save	;	
-
-		float ScoreStripePair (Rect* stripe_A, Rect* stripe_B, float x_bias, float y_bias);
-
 	public:
-		PegFinder(VideoInterface* video_interface,
-				SaveEntry *sliders_save				,	
-				SaveEntry *sliders_limits			,	
-				SaveEntry *imgproc_save				,	
-				SaveEntry *application_options	,	
-				SaveEntry *video_interface_save	,
-				pugi::xml_document* stream_doc
-				) ;
+		struct imgproc_results {
+			int stripes_found = 0;
+			float x_offset_to_target = 0.f;
+			float distance_to_target = 0.f;
+			float angle_to_target = 0.f;
+			float slope_to_target = 0.f;
+			float stripe_width = 0.f;
+			float target_x_offset = 0.f;
+			bool distance_found = 0.f;
+		};
 
-		void ProcessFrame();
+		PegFinder(Settings* sf);
+
+		void ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_buffer, imgproc_results* results);
 
 		~PegFinder();
 };

@@ -9,19 +9,16 @@ PROJECT(RS_Vision)
 # Configure OpenCV and Pugixml packages (They have cmake release files)
 FIND_PACKAGE(OpenCV REQUIRED)
 FIND_PACKAGE(Threads REQUIRED)
-#FIND_PACKAGE(PugiXML REQUIRED)
 
-# Add the -lpthread flag instead of just the libs (Usefile for nvim), only on CMAKE 3.0+
-#set(THREADS_PREFER_PTHREAD_FLAG ON)
-
+# Find pugixml
 find_path (PUGIXML_INCLUDE_DIR NAMES pugixml.hpp PATHS ${PUGIXML_HOME}/include)
 find_library (PUGIXML_LIBRARY NAMES pugixml PATHS ${PUGIXML_HOME}/lib)
 
 # Manually the librealsense libraries and headers
 FILE(GLOB Realsense_LIBS "/usr/local/lib/librealsense.so")
 INCLUDE_DIRECTORIES("/usr/local/include/librealsense/")
-#FILE(GLOB Pugixml_LIBS "/usr/lib/arm-linux-gnueabihf/libpugixml.so")
-#INCLUDE_DIRECTORIES("/usr/include/pugixml.hpp")
+FILE(GLOB TinySpline_LIBS "/usr/local/lib/libtinysplinecpp.so")
+INCLUDE_DIRECTORIES("/usr/local/include/tinysplinecpp.h")
 
 # Include the include directory for the project 
 INCLUDE_DIRECTORIES(include ${PUGIXML_INCLUDE_DIR}/pugixml.hpp)
@@ -38,4 +35,4 @@ SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
 ADD_EXECUTABLE(RS_Vision ${SOURCES})
 
 # Link libraries into the executable
-TARGET_LINK_LIBRARIES(RS_Vision ${OpenCV_LIBS} ${Realsense_LIBS} ${PUGIXML_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+TARGET_LINK_LIBRARIES(RS_Vision ${OpenCV_LIBS} ${Realsense_LIBS} ${PUGIXML_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${TinySpline_LIBS})

@@ -1,31 +1,15 @@
 #include <PegFinder.hpp>
 
-PegFinder::PegFinder(VideoInterface* video_interface,
-		SaveEntry *sliders_save				,	
-		SaveEntry *sliders_limits			,	
-		SaveEntry *imgproc_save				,	
-		SaveEntry *application_options	,	
-		SaveEntry *video_interface_save	,
-		pugi::xml_document* stream_doc
-		) {
+PegFinder::PegFinder(Settings* sf) {
+	this->sf = sf;
+	histogram_goal_center	= new Histogram<unsigned short>(sf->imgproc_settings_peg_inst.histogram_min, sf->imgproc_settings_peg_inst.histogram_max);
+	hist_inner_roi_left	 	= new Histogram<unsigned short>(sf->imgproc_settings_peg_inst.histogram_min, sf->imgproc_settings_peg_inst.histogram_max);
+	hist_inner_roi_right 	= new Histogram<unsigned short>(sf->imgproc_settings_peg_inst.histogram_min, sf->imgproc_settings_peg_inst.histogram_max);
 
-	this->video_interface = video_interface;
-	this->sliders_save				=	sliders_save		 	; 
-	this->sliders_limits				=	sliders_limits		 	; 	
-	this->imgproc_save				=	imgproc_save		 	; 
-	this->application_options		=	application_options	; 
-	this->video_interface_save		=	video_interface_save	;
-	this->stream_doc 					=	stream_doc				;
+	matcher = new StripeMatcher (sf->imgproc_settings_peg_inst.matcher_bias_x, sf->imgproc_settings_peg_inst.matcher_bias_y);
 
-	//Object initialization
-	histogram_goal_center	= new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
-	hist_inner_roi_left	 	= new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
-	hist_inner_roi_right 	= new Histogram<unsigned short>((*imgproc_save)["histogram_min"], (*imgproc_save)["histogram_max"]);
-
-	matcher = new StripeMatcher (1, 100);
-
-	distance_median = new Median<float>(5,0);
-	angle_median = new Median<float>(5,0);
+	distance_median 	= new Median<float>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
+	angle_median 		= new Median<float>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
 
 	//morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_open"] + 1, 2*(*imgproc_save)["morph_open"]+1 ), Point( (*imgproc_save)["morph_open"], (*imgproc_save)["morph_open"] ) ); //Make sure that objects have a certain area
 	//morph_close_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_close"] + 1, 2*(*imgproc_save)["morph_close"]+1 ), Point( (*imgproc_save)["morph_close"], (*imgproc_save)["morph_close"] ) ); //Make sure that objects have a certain area
@@ -33,25 +17,24 @@ PegFinder::PegFinder(VideoInterface* video_interface,
 	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 7, 3 ), Point( 4, 2 ) ); //Make sure that objects have a certain area
 }
 
-void PegFinder::ProcessFrame() {
-	std::string ret;
-	if ((*application_options)["show_depth"]) {
-		imshow("DEPTH", *video_interface->largeDepthCV * 6);
-	}
+void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_buffer, imgproc_results* results) {
+#if DEBUG_SHOW_DEPTH
+		imshow("DEPTH", *depth_image * 6);
+#endif
 
-	video_interface->bgrmatCV->copyTo(display_buffer);
+	color_image->copyTo(*display_buffer);
 
-	cvtColor (*video_interface->bgrmatCV, raw_hsv_color, COLOR_BGR2HSV); // Convert to HSV colorspace
+	cvtColor (*color_image, raw_hsv_color, COLOR_BGR2HSV); // Convert to HSV colorspace
 	inRange (raw_hsv_color,
-			Scalar ((*sliders_save)["hue_slider_lower"], (*sliders_save)["sat_slider_lower"], (*sliders_save)["val_slider_lower"]),
-			Scalar ((*sliders_save)["hue_slider_upper"], (*sliders_save)["sat_slider_upper"], (*sliders_save)["val_slider_upper"]),
+			Scalar (sf->sliders_peg_inst.hue_slider_lower, sf->sliders_peg_inst.sat_slider_lower, sf->sliders_peg_inst.val_slider_lower),
+			Scalar (sf->sliders_peg_inst.hue_slider_upper, sf->sliders_peg_inst.sat_slider_upper, sf->sliders_peg_inst.val_slider_upper),
 			hsv_range_mask);
 	morphologyEx(hsv_range_mask, hsv_range_mask_filtered, MORPH_OPEN, morph_open_struct_element);
 	morphologyEx(hsv_range_mask_filtered, hsv_range_mask_filtered, MORPH_CLOSE, morph_close_struct_element);
 
-	if ((*application_options)["show_HSV"]) {
+#if DEBUG_SHOW_HSV
 		imshow("HSV_RANGE_SELECT", hsv_range_mask_filtered);
-	}
+#endif
 
 	// Find viable contours
 	findContours(hsv_range_mask_filtered, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, Point(0,0));
@@ -69,14 +52,14 @@ void PegFinder::ProcessFrame() {
 
 		//Check if it fits contour criteria (Area, and ROI width to height ratio)
 		//TODO: Set the tolerance from the save file!
-		if ( bounding_rectangle->area() >= (*sliders_save)["area_slider"] && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.3) ) {
-			rectangle(display_buffer, *bounding_rectangle, Scalar(0, 255, 255), 2);
+		if ( bounding_rectangle->area() >= sf->sliders_peg_inst.area_slider && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.3) ) {
+			rectangle(*display_buffer, *bounding_rectangle, Scalar(0, 255, 255), 2);
 
 			//Create a new stripe object
 			stripes.push_back(bounding_rectangle); 
 
 		} else {
-			rectangle(display_buffer, *bounding_rectangle, Scalar(0, 0, 255), 2);
+			rectangle(*display_buffer, *bounding_rectangle, Scalar(0, 0, 255), 2);
 		}
 	}
 
@@ -84,166 +67,133 @@ void PegFinder::ProcessFrame() {
 	Rect* left_stripe = nullptr;
 	Rect* right_stripe = nullptr;
 	//TODO: Move this to the save class instead
-	stream_doc->reset();
-	pugi::xml_node root_node = stream_doc->append_child("Root");
-
-//	if (stripes.size() == 1) {
-	if (stripes.size() > 0) { 
-		root_node.append_attribute("stripes_found") = "one";
-		root_node.append_attribute("stripe_width") = stripes.at(0)->width;
-
-		int two_inches_in_px = stripes.at(0)->width;
-		float px_per_inch = (float)two_inches_in_px / 2.0; 
-
-		int distance_to_screen_edge = (*video_interface_save)["bgr_width"] / 2;
-		int magnitude_x_px = stripes.at(0)->x - distance_to_screen_edge;
-		float magnitude_x_inch = magnitude_x_px / px_per_inch;
-
-		root_node.append_attribute("stripe_x_magnitude_inch") = magnitude_x_inch;
-	}
-
-	//	}
 
 	if (!stripes.size()) {
-		root_node.append_attribute("stripes_found") = "none";
+		results->stripes_found = 0;
 	}
 
-	/*
-		if (matcher->FindPair(&stripes, left_stripe, right_stripe) && left_stripe && right_stripe) {
-		root_node.append_attribute("stripes_found") = "both";
+	if (matcher->FindPair(&stripes, left_stripe, right_stripe) && left_stripe && right_stripe) {
+		results->stripes_found = 2;
 		if (GetCenter(right_stripe).x > GetCenter(left_stripe).x) {
-		std::swap(left_stripe, right_stripe);
+			std::swap(left_stripe, right_stripe);
 		}
 
 		Rect goal_center_Rect = Rect(
-		Point(left_stripe->br().x, left_stripe->tl().y), 
-		Point(right_stripe->tl().x, right_stripe->br().y)); //Only get the inner area between the two strips because the strips themselves reflect the IR that allows for depth (See notes) 
+				Point(left_stripe->br().x, left_stripe->tl().y), 
+				Point(right_stripe->tl().x, right_stripe->br().y)); //Only get the inner area between the two strips because the strips themselves reflect the IR that allows for depth (See notes) 
 		Rect left_hist_portion_Rect  = goal_center_Rect; 
 		Rect right_hist_portion_Rect = goal_center_Rect; 
 
-//TODO: Move these constants to variables in the save file
-left_hist_portion_Rect.x  -= left_hist_portion_Rect.width  * 1; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
-right_hist_portion_Rect.x += right_hist_portion_Rect.width * 1;
+		//TODO: Move these constants to variables in the save file
+		left_hist_portion_Rect.x  -= left_hist_portion_Rect.width  * 1; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
+		right_hist_portion_Rect.x += right_hist_portion_Rect.width * 1;
 
-left_hist_portion_Rect.y  -= left_hist_portion_Rect.height  * 2; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
-right_hist_portion_Rect.y -= right_hist_portion_Rect.height * 2;
+		left_hist_portion_Rect.y  -= left_hist_portion_Rect.height  * 2; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
+		right_hist_portion_Rect.y -= right_hist_portion_Rect.height * 2;
 
-//Cut off the side of the box when it hits the edge instead of trying to sample outside of the image (That breaks things)
-if (left_hist_portion_Rect.y < 0) {
-left_hist_portion_Rect.y = 0;
-}
+		//Cut off the side of the box when it hits the edge instead of trying to sample outside of the image (That breaks things)
+		if (left_hist_portion_Rect.y < 0) {
+			left_hist_portion_Rect.y = 0;
+		}
 
-if (right_hist_portion_Rect.y < 0) {
-right_hist_portion_Rect.y = 0;
-}
+		if (right_hist_portion_Rect.y < 0) {
+			right_hist_portion_Rect.y = 0;
+		}
 
-if (left_hist_portion_Rect.x < 0) {
-int cutoff = abs(left_hist_portion_Rect.x);
-left_hist_portion_Rect.x = 0;
-left_hist_portion_Rect.width -= cutoff;
-}
+		if (left_hist_portion_Rect.x < 0) {
+			int cutoff = abs(left_hist_portion_Rect.x);
+			left_hist_portion_Rect.x = 0;
+			left_hist_portion_Rect.width -= cutoff;
+		}
 
-if (right_hist_portion_Rect.x + right_hist_portion_Rect.width > (*video_interface_save)["bgr_width"]) {
-int cutoff = abs((right_hist_portion_Rect.x + right_hist_portion_Rect.width) - (*video_interface_save)["bgr_width"]);
-right_hist_portion_Rect.width -= cutoff;
-}
+		if (right_hist_portion_Rect.x + right_hist_portion_Rect.width > sf->sensor_options_peg_inst.bgr_width) {
+			int cutoff = abs((right_hist_portion_Rect.x + right_hist_portion_Rect.width) - sf->sensor_options_peg_inst.bgr_width);
+			right_hist_portion_Rect.width -= cutoff;
+		}
 
-//If cutting of the side of the box makes it too small, try to 
+		//If cutting of the side of the box makes it too small, try to 
 
-//{"sample_slicing_area_min"	,	10		}
-if (left_hist_portion_Rect.area() > ((*imgproc_save)["sample_slicing_area_min"] ^ 2) || right_hist_portion_Rect.area() > ((*imgproc_save)["sample_slicing_area_min"] ^ 2)) {
-if (left_hist_portion_Rect.area() < ((*imgproc_save)["sample_slicing_area_min"] ^ 2)) {
-left_hist_portion_Rect = right_hist_portion_Rect; //Copy it, then slice both into their respective halves
-left_hist_portion_Rect.width /= 2;
-right_hist_portion_Rect.width /= 2;
+		//{"sample_slicing_area_min"	,	10		}
+		if (left_hist_portion_Rect.area() > (sf->imgproc_settings_peg_inst.sample_slicing_area_min ^ 2) || right_hist_portion_Rect.area() > (sf->imgproc_settings_peg_inst.sample_slicing_area_min ^ 2)) {
+			if (left_hist_portion_Rect.area() < (sf->imgproc_settings_peg_inst.sample_slicing_area_min ^ 2)) {
+				left_hist_portion_Rect = right_hist_portion_Rect; //Copy it, then slice both into their respective halves
+				left_hist_portion_Rect.width /= 2;
+				right_hist_portion_Rect.width /= 2;
 
-right_hist_portion_Rect.x += left_hist_portion_Rect.width;
-}
+				right_hist_portion_Rect.x += left_hist_portion_Rect.width;
+			}
 
-if (right_hist_portion_Rect.area() < ((*imgproc_save)["sample_slicing_area_min"] ^ 2)) {
-right_hist_portion_Rect = left_hist_portion_Rect; //Copy it, then slice both into their respective halves
-left_hist_portion_Rect.width /= 2;
-right_hist_portion_Rect.width /= 2;
+			if (right_hist_portion_Rect.area() < (sf->imgproc_settings_peg_inst.sample_slicing_area_min ^ 2)) {
+				right_hist_portion_Rect = left_hist_portion_Rect; //Copy it, then slice both into their respective halves
+				left_hist_portion_Rect.width /= 2;
+				right_hist_portion_Rect.width /= 2;
 
-right_hist_portion_Rect.x += left_hist_portion_Rect.width;
-}
+				right_hist_portion_Rect.x += left_hist_portion_Rect.width;
+			}
 
-if ((*application_options)["show_overlays"]) {
-rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
-line(display_buffer, GetCenter(left_stripe), GetCenter(right_stripe), Scalar(0, 0, 255), 3, CV_AA); 
-}
+#if DEBUG_SHOW_OVERLAYS
+				rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
+				line(display_buffer, GetCenter(left_stripe), GetCenter(right_stripe), Scalar(0, 0, 255), 3, CV_AA); 
+#endif
 
-//TODO: Add this to the config file stuff
-rectangle(display_buffer, left_hist_portion_Rect, Scalar(255, 0, 255), 2);  
-rectangle(display_buffer, right_hist_portion_Rect, Scalar(255,0, 255), 2);  
+			//TODO: Add this to the config file stuff
+			rectangle(*display_buffer, left_hist_portion_Rect, Scalar(255, 0, 255), 2);  
+			rectangle(*display_buffer, right_hist_portion_Rect, Scalar(255,0, 255), 2);  
 
-histogram_goal_center->insert_histogram_data(&goal_center_Rect, video_interface->largeDepthCV);
-hist_inner_roi_left->insert_histogram_data(&left_hist_portion_Rect, video_interface->largeDepthCV);
-hist_inner_roi_right->insert_histogram_data(&right_hist_portion_Rect, video_interface->largeDepthCV);
+			histogram_goal_center->insert_histogram_data(&goal_center_Rect, depth_image);
+			hist_inner_roi_left->insert_histogram_data(&left_hist_portion_Rect, depth_image);
+			hist_inner_roi_right->insert_histogram_data(&right_hist_portion_Rect, depth_image);
 
-//TODO: Document the hell out of this, and reorganize (Class?)
-//int depth = histogram_goal_center->take_percentile((*imgproc_save)["histogram_percentile"]);
+			//TODO: Document the hell out of this, and reorganize (Class?)
+			//int depth = histogram_goal_center->take_percentile((*imgproc_save)["histogram_percentile"]);
 
-int depth_left_Rect = hist_inner_roi_left->take_percentile((*imgproc_save)["histogram_percentile"]);
-int depth_right_Rect = hist_inner_roi_right->take_percentile((*imgproc_save)["histogram_percentile"]);
+			int depth_left_Rect = hist_inner_roi_left->take_percentile(sf->imgproc_settings_peg_inst.histogram_percentile);
+			int depth_right_Rect = hist_inner_roi_right->take_percentile(sf->imgproc_settings_peg_inst.histogram_percentile);
 
-int x_center_left_Rect 	= MidPoint(left_hist_portion_Rect.tl(),  left_hist_portion_Rect.br()).x;
-int x_center_right_Rect = MidPoint(right_hist_portion_Rect.tl(), right_hist_portion_Rect.br()).x;
+			int x_center_left_Rect 	= MidPoint(left_hist_portion_Rect.tl(),  left_hist_portion_Rect.br()).x;
+			int x_center_right_Rect = MidPoint(right_hist_portion_Rect.tl(), right_hist_portion_Rect.br()).x;
 
 
-int distance_to_screen_edge = (*video_interface_save)["bgr_width"] / 2;
+			int distance_to_screen_edge = sf->sensor_options_peg_inst.depth_width / 2;
 
-//Eight and a quarter inches is how far apart the centers of the stripes should be, by spec
-int eight_and_quarter_inches_in_px = PointDistance(GetCenter(left_stripe), GetCenter(right_stripe));
-float px_per_inch = (float)eight_and_quarter_inches_in_px / 8.25; 
+			//Eight and a quarter inches is how far apart the centers of the stripes should be, by spec
+			int eight_and_quarter_inches_in_px = PointDistance(GetCenter(left_stripe), GetCenter(right_stripe));
+			float px_per_inch = (float)eight_and_quarter_inches_in_px / 8.25; 
 
-//Left and right center x positions in inches 
-float x_center_left_Rect_inch		 = x_center_left_Rect	 / px_per_inch;
-float x_center_right_Rect_inch	 = x_center_right_Rect / px_per_inch;
+			//Left and right center x positions in inches 
+			float x_center_left_Rect_inch		 = x_center_left_Rect	 / px_per_inch;
+			float x_center_right_Rect_inch	 = x_center_right_Rect / px_per_inch;
 
-//Left and right center depths in inches
-float depth_left_Rect_inch 	= 	(float)depth_left_Rect 	* 0.0393701f;
-float depth_right_Rect_inch 	= 	(float)depth_right_Rect * 0.0393701f;
+			//Left and right center depths in inches
+			float depth_left_Rect_inch 	= 	(float)depth_left_Rect 	* 0.0393701f;
+			float depth_right_Rect_inch 	= 	(float)depth_right_Rect * 0.0393701f;
 
-//Slope from one side of the goal to the other as alighned too our plane
-float depth_x_slope = (float)(depth_right_Rect_inch - depth_left_Rect_inch) / (float)(x_center_right_Rect_inch - x_center_left_Rect_inch); 
+			//Slope from one side of the goal to the other as alighned too our plane
+			float depth_x_slope = (float)(depth_right_Rect_inch - depth_left_Rect_inch) / (float)(x_center_right_Rect_inch - x_center_left_Rect_inch); 
 
-int magnitude_x_px = MidPoint(GetCenter(left_stripe), GetCenter(right_stripe)).x - distance_to_screen_edge;
-float magnitude_x_inch = magnitude_x_px / px_per_inch;
+			int magnitude_x_px = MidPoint(GetCenter(left_stripe), GetCenter(right_stripe)).x - distance_to_screen_edge;
+			float magnitude_x_inch = magnitude_x_px / px_per_inch;
 
-float angle = (atanf(depth_x_slope) * 180.0f) / PI;
+			float angle = (atanf(depth_x_slope) * 180.0f) / PI;
 
-root_node.append_attribute("x_offset_to_target") = magnitude_x_inch;
-if (depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
-	distance_median->insert_median_data((depth_left_Rect_inch + depth_left_Rect_inch) / 2);
-	angle_median->insert_median_data(angle);
-	root_node.append_attribute("distance_to_target") = distance_median->compute_median();
-	root_node.append_attribute("angle") = angle_median->compute_median(); 
-} else {
-	root_node.append_attribute("distance_to_target") = 99999;
-	root_node.append_attribute("angle") = 99999;
-}
-} else {
-	//TODO: Move this into the selection sorter, or at least notify the rio!!
-	//std::cerr << "Both tapes are too small when cut!" << std::endl;
-	root_node.remove_attribute("stripes_found");
-	root_node.append_attribute("stripes_found") = "one";
-	root_node.append_attribute("stripe_width") = (left_hist_portion_Rect.width + right_hist_portion_Rect.width) / 2;
-	//TODO: Cut the tapes off by the depth area and not by the side of the color image (In HD, the color image is much wider!)
-}
-root_node.append_attribute("timestamp") = video_interface->GetTimeStamp();
-
-}  
-*/
-
-//Get a box that encapsulates both stripes
-
-// Find the most promising pair (Closest, most centered)
-
-//TODO: Make another mat to display on instead of writing over the video_interface's mat
-if ((*application_options)["show_rgb"]) {
-	imshow("Color", display_buffer);
-}
+			results->x_offset_to_target = magnitude_x_inch;
+			if (depth_left_Rect_inch > 0 && depth_right_Rect_inch > 0) {
+				results->distance_found = true;
+				distance_median->insert_median_data((depth_left_Rect_inch + depth_left_Rect_inch) / 2);
+				angle_median->insert_median_data(angle);
+				results->distance_to_target = distance_median->compute_median();
+				results->angle_to_target = angle_median->compute_median(); 
+				results->slope_to_target = depth_x_slope;
+				results->target_x_offset = magnitude_x_inch;
+			} else {
+				results->distance_found = false;
+			}
+		} else {
+			//std::cerr << "Both tapes are too small when cut!" << std::endl;
+			results->stripes_found = 1;
+			results->stripe_width  = (left_hist_portion_Rect.width + right_hist_portion_Rect.width) / 2;
+		}
+	}  
 }
 
 PegFinder::~PegFinder() {
