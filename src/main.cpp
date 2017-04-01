@@ -78,7 +78,7 @@ void* finder_thread (void* arg) {
 
 		if (tempmode == "Peg\n") {
 			//finder->ProcessFrame(sensor->largeDepthCV, sensor->bgrmatCV, &display_buffer, &results);
-			results.slope_to_target = 1.0f;
+			results.slope_to_target = -1.0f;
 			results.distance_to_target = 90.0f;
 			results.target_x_offset = 90.0f;
 			results.stripes_found = 2;
@@ -93,13 +93,13 @@ void* finder_thread (void* arg) {
 				pugi::xml_node spline_right_node = root_node.append_child("spline_right");	
 				for (int i = 0; i < left_tracks.size(); i++) {
 					{
-						pugi::xml_node instance = spline_left_node.append_child(std::to_string(i).c_str());
+						pugi::xml_node instance = spline_left_node.append_child(("Point" + std::to_string(i)).c_str());
 						instance.append_attribute("Distance") = left_tracks[i].compounded_distance;
 						instance.append_attribute("Velocity") = left_tracks[i].velocity;
 						instance.append_attribute("DeltaT") = left_tracks[i].time_delta;
 					}
 					{
-						pugi::xml_node instance = spline_right_node.append_child(std::to_string(i).c_str());
+						pugi::xml_node instance = spline_right_node.append_child(("Point" + std::to_string(i)).c_str());
 						instance.append_attribute("Distance") = right_tracks[i].compounded_distance;
 						instance.append_attribute("Velocity") = right_tracks[i].velocity;
 						instance.append_attribute("DeltaT") = right_tracks[i].time_delta;
@@ -227,8 +227,8 @@ int main (int argc, char** argv) {
 		std::cerr << "Waiting for client connection on port " << sf->server_options_inst.server_port << std::endl;
 		serv->WaitForClientConnection();
 		while (serv->GetNetState()) {
-			//std::cerr << "Client Message: " << 
 			std::string tempmode = serv->WaitForClientMessage();
+			//std::cerr << "Client Message: " << tempmode << std::endl;
 			pthread_mutex_lock(&mode_mutex);
 			mode = tempmode;
 			pthread_mutex_unlock(&mode_mutex);
