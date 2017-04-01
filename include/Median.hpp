@@ -40,7 +40,7 @@ class Median
 			{
 				std::deque<T> median_stack_copy = median_stack;
 				std::sort (median_stack_copy.begin(), median_stack_copy.end());
-				return median_stack_copy[median_stack_copy.size() / 2.0];
+				return median_stack_copy[median_stack_copy.size() / 2];
 			} 
 			else 
 			{

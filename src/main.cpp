@@ -19,7 +19,6 @@ pugi::xml_document send_doc;
 
 Settings* sf;
 
-//TODO: Move this stuff to it's own class or make it less icky somehow
 pthread_mutex_t xml_mutex;
 pthread_mutex_t mode_mutex;
 pthread_t xml_thread;
@@ -145,7 +144,7 @@ int gmain (int argc, char** argv) {
 	std::string command = "v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(sf->sensor_options_peg_inst.exposure) + " -d 2";
 	system(command.c_str());
 
-	sensor = new Realsense( //TODO: Pass the entire video_interface_save object into the class, and use it locally there (Maybe)
+	sensor = new Realsense( 
 			sf->sensor_options_peg_inst.depth_width,		 
 			sf->sensor_options_peg_inst.depth_height,		
 			sf->sensor_options_peg_inst.depth_framerate,	

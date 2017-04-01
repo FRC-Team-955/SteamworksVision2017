@@ -51,8 +51,7 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 		float rectangle_dim_ratio = (float)bounding_rectangle->width / (float)bounding_rectangle->height;	
 
 		//Check if it fits contour criteria (Area, and ROI width to height ratio)
-		//TODO: Set the tolerance from the save file!
-		if ( bounding_rectangle->area() >= sf->sliders_peg_inst.area_slider && ToleranceCheck(rectangle_dim_ratio, 2.0/5.0, 0.3) ) {
+		if ( bounding_rectangle->area() >= sf->sliders_peg_inst.area_slider && ToleranceCheck(rectangle_dim_ratio, sf->imgproc_settings_peg_inst.stripe_dimension_ratio, sf->imgproc_settings_peg_inst.stripe_dimension_ratio_tolerance) ) {
 			rectangle(*display_buffer, *bounding_rectangle, Scalar(0, 255, 255), 2);
 
 			//Create a new stripe object
@@ -66,7 +65,6 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 	// Find the best pair (Find closest by most similar Y value, area, and distance to adjacent)
 	Rect* left_stripe = nullptr;
 	Rect* right_stripe = nullptr;
-	//TODO: Move this to the save class instead
 
 	if (!stripes.size()) {
 		results->stripes_found = 0;
@@ -84,11 +82,11 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 		Rect left_hist_portion_Rect  = goal_center_Rect; 
 		Rect right_hist_portion_Rect = goal_center_Rect; 
 
-		//TODO: Move these constants to variables in the save file
+		//TODO: Move these constants to variables in the save file, document more
 		left_hist_portion_Rect.x  -= left_hist_portion_Rect.width  * 1; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
 		right_hist_portion_Rect.x += right_hist_portion_Rect.width * 1;
 
-		left_hist_portion_Rect.y  -= left_hist_portion_Rect.height  * 2; //Needs to be 1 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
+		left_hist_portion_Rect.y  -= left_hist_portion_Rect.height  * 2; //Needs to be 2 more widths farther than the right one because the edge starts from the x position (left edge), not the centers
 		right_hist_portion_Rect.y -= right_hist_portion_Rect.height * 2;
 
 		//Cut off the side of the box when it hits the edge instead of trying to sample outside of the image (That breaks things)
@@ -132,21 +130,17 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 			}
 
 #if DEBUG_SHOW_OVERLAYS
-				rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
-				line(display_buffer, GetCenter(left_stripe), GetCenter(right_stripe), Scalar(0, 0, 255), 3, CV_AA); 
-#endif
-
-			//TODO: Add this to the config file stuff
+			rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
+			line(display_buffer, GetCenter(left_stripe), GetCenter(right_stripe), Scalar(0, 0, 255), 3, CV_AA); 
 			rectangle(*display_buffer, left_hist_portion_Rect, Scalar(255, 0, 255), 2);  
 			rectangle(*display_buffer, right_hist_portion_Rect, Scalar(255,0, 255), 2);  
+#endif
 
 			histogram_goal_center->insert_histogram_data(&goal_center_Rect, depth_image);
 			hist_inner_roi_left->insert_histogram_data(&left_hist_portion_Rect, depth_image);
 			hist_inner_roi_right->insert_histogram_data(&right_hist_portion_Rect, depth_image);
 
 			//TODO: Document the hell out of this, and reorganize (Class?)
-			//int depth = histogram_goal_center->take_percentile((*imgproc_save)["histogram_percentile"]);
-
 			int depth_left_Rect = hist_inner_roi_left->take_percentile(sf->imgproc_settings_peg_inst.histogram_percentile);
 			int depth_right_Rect = hist_inner_roi_right->take_percentile(sf->imgproc_settings_peg_inst.histogram_percentile);
 

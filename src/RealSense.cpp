@@ -1,7 +1,5 @@
 #include "RealSense.hpp"
 
-//TODO: Make the realsense class inherit from a base that can also be used to provide a dummy camera that can accept video!
-
 void Realsense::GrabFrames () {
 	if (ctx.get_device_count() > 0)	{
 		dev->wait_for_frames();

@@ -12,6 +12,9 @@ class Settings {
 
 			int sample_slicing_area_min = 2000;
 
+			float stripe_dimension_ratio = 2.0f/5.0f;
+			float stripe_dimension_ratio_tolerance = 0.3f;
+
 			int matcher_bias_x = 1;
 			int matcher_bias_y = 100;
 
