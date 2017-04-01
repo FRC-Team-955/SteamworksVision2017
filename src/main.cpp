@@ -107,6 +107,7 @@ void* finder_thread (void* arg) {
 				}
 			}
 			send_doc.save(ss, "", pugi::format_raw);
+			//send_doc.save(std::cout);
 			ss << std::endl;
 
 			pthread_mutex_lock(&xml_mutex);

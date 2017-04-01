@@ -104,13 +104,13 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 		 * and extend out along the normal the length of the offset from 
 		 * the center of the drive base
 		 */
-		cv::Point2f normal_left = MoveAlongLine(spline_derive.y > 0,
+		cv::Point2f normal_left = MoveAlongLine(spline_derive.y < 0,
 				wheel_seperation,
 				NegativeReciprocal(spline_derive.y / spline_derive.x),
 				spline_center
 				);
 
-		cv::Point2f normal_right = MoveAlongLine(spline_derive.y < 0,
+		cv::Point2f normal_right = MoveAlongLine(spline_derive.y > 0,
 				wheel_seperation,
 				NegativeReciprocal(spline_derive.y / spline_derive.x),
 				spline_center
