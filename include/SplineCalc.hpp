@@ -6,7 +6,7 @@
 #include <vector>
 #include <MiscImgproc.hpp>
 
-#define GENERATE_DEBUG true
+#define GENERATE_DEBUG false
 
 //Output CSV files for use in GNUPLOT
 #if GENERATE_DEBUG
@@ -29,7 +29,8 @@ class SplineCalc {
 		float step = 0.0f;
 
 		float time_unit_multiplier = 0.0f;
-		cv::Point2f robot_origin  = cv::Point2f(0.0f, 0.0f);
+		cv::Point2f robot_origin = cv::Point2f(0.0f, 0.0f);
+		cv::Point2f end_offset = cv::Point2f(0.0f, 0.0f);
 
 #if GENERATE_DEBUG
 		std::ofstream save_center_display; 			
@@ -39,7 +40,15 @@ class SplineCalc {
 #endif
 
 	public:
-		SplineCalc(int resolution, float wheel_radius, float max_velocity, float wheel_seperation, float ctrlpt_distance, float time_unit_multiplier);
+		SplineCalc(
+				int resolution, 
+				float wheel_radius, 
+				float max_velocity, float 
+				wheel_seperation, 
+				float ctrlpt_distance, 
+				float time_unit_multiplier, 
+				cv::Point2f end_offset);
+
 
 		float ReallyCrappyRamp (float i);
 

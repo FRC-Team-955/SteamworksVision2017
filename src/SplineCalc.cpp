@@ -1,12 +1,20 @@
 #include <SplineCalc.hpp>
 
-SplineCalc::SplineCalc(int resolution, float wheel_radius, float max_velocity, float wheel_seperation, float ctrlpt_distance, float time_unit_multiplier) {
+SplineCalc::SplineCalc(
+		int resolution, 
+		float wheel_radius, 
+		float max_velocity, float 
+		wheel_seperation, 
+		float ctrlpt_distance, 
+		float time_unit_multiplier, 
+		cv::Point2f end_offset) {
 	this->resolution = resolution;
 	this->wheel_radius = wheel_radius;
 	this->wheel_seperation = wheel_seperation;
 	this->max_velocity = max_velocity;
 	this->ctrlpt_distance = ctrlpt_distance;
 	this->time_unit_multiplier = time_unit_multiplier;
+	this->end_offset = end_offset;
 	step = 1.0f / (float)resolution;
 
 #if GENERATE_DEBUG
@@ -60,11 +68,13 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 	ctrlp[7] =  goal_position.y;  			// y3
 
 	cv::Point2f first_outcrop = MoveAlongLine(goal_slope < 0, ctrlpt_distance, NegativeReciprocal(goal_slope), goal_position);
+	first_outcrop += end_offset;
 
 	ctrlp[8] = first_outcrop.x;  				// x4
 	ctrlp[9] = first_outcrop.y;  				// y4
 
 	cv::Point2f second_outcrop = MoveAlongLine(goal_slope < 0, ctrlpt_distance * 2.0f, NegativeReciprocal(goal_slope), goal_position);
+	second_outcrop += end_offset;
 
 	ctrlp[10] =  second_outcrop.x;  			// x5
 	ctrlp[11] =  second_outcrop.y;  			// y5
