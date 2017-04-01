@@ -27,6 +27,8 @@ class SplineCalc {
 		float max_velocity = 0.0f;
 		float ctrlpt_distance = 0.0f;
 		float step = 0.0f;
+
+		float time_unit_multiplier = 0.0f;
 		cv::Point2f robot_origin  = cv::Point2f(0.0f, 0.0f);
 
 #if GENERATE_DEBUG
@@ -37,7 +39,9 @@ class SplineCalc {
 #endif
 
 	public:
-		SplineCalc(int resolution, float wheel_radius, float max_velocity, float wheel_seperation, float ctrlpt_distance);
+		SplineCalc(int resolution, float wheel_radius, float max_velocity, float wheel_seperation, float ctrlpt_distance, float time_unit_multiplier);
+
+		float ReallyCrappyRamp (float i);
 
 		struct motion_plan_result {
 			float compounded_distance, velocity, time_delta;

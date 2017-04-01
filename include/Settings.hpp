@@ -21,11 +21,13 @@ class Settings {
 			float median_filter_default = 0.0f;
 			int median_filter_stack_size = 5;
 
-			int 	spline_resolution = 300;
-			float spline_wheel_radius = 0.1f;
-			float spline_max_velocity = 0.1f;
-			float spline_wheel_seperation = 0.2f;
-			float spline_ctrlpt_distance = 1.0f;
+			int spline_resolution = 300;
+			float spline_wheel_radius = 2.1f; //Doesn't matter for now... Damnit trevor
+			float spline_max_velocity = 4000;
+			float spline_wheel_seperation = 31.0f / 2.0f;
+			float spline_ctrlpt_distance = 10.0f;
+
+			float spline_time_unit_multiplier = 60.0f * 1000.0f; //Crappy hack
 		} imgproc_settings_peg_inst;
 
 		struct server_options {

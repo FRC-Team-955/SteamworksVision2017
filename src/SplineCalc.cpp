@@ -1,11 +1,12 @@
 #include <SplineCalc.hpp>
 
-SplineCalc::SplineCalc(int resolution, float wheel_radius, float max_velocity, float wheel_seperation, float ctrlpt_distance) {
+SplineCalc::SplineCalc(int resolution, float wheel_radius, float max_velocity, float wheel_seperation, float ctrlpt_distance, float time_unit_multiplier) {
 	this->resolution = resolution;
 	this->wheel_radius = wheel_radius;
 	this->wheel_seperation = wheel_seperation;
 	this->max_velocity = max_velocity;
 	this->ctrlpt_distance = ctrlpt_distance;
+	this->time_unit_multiplier = time_unit_multiplier;
 	step = 1.0f / (float)resolution;
 
 #if GENERATE_DEBUG
@@ -22,6 +23,21 @@ cv::Point2f SplineCalc::RationalVecConv(std::vector<ts::rational>* input) {
 
 cv::Point2f SplineCalc::RationalVecConv(std::vector<ts::rational> input) {
 	return cv::Point2f(input.at(0), input.at(1));
+}
+
+//TODO: Make this less shitty
+float SplineCalc::ReallyCrappyRamp (float i) {
+	float first_point = 0.1f;
+	float second_point = 0.9f;
+	if (i > 0.0f && i < first_point) {
+		return (i / first_point) * max_velocity;
+	} else if (i >= first_point && i <= second_point) {
+		return max_velocity;
+	} else if (i >= second_point && i < 0.999) {
+		return (1.0f - ((i - second_point) / (1.0f - second_point))) * max_velocity;
+	} else {
+		return 0.01f;
+	}
 }
 
 void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::vector<motion_plan_result>* right_tracks, float goal_slope, cv::Point2f goal_position) {
@@ -65,8 +81,6 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 	float compounded_left = 0.0f;
 	float compounded_right = 0.0f;
 
-	float time_compounded = 0.0f;
-
 	for (float i = 0.0f; i < 1.0f - step; i += step) {
 		cv::Point2f spline_center = RationalVecConv(spline.evaluate(i).result());
 		cv::Point2f spline_derive = RationalVecConv(derivation.evaluate(i).result());
@@ -103,8 +117,9 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 		float travel_right = PointDistance(last_position_right, normal_right);
 
 		//TODO: Max velocity at ramp point!
-		float time_delta = (travel_left > travel_right ? travel_left : travel_right) / max_velocity;
+		float time_delta = (travel_left > travel_right ? travel_left : travel_right) / ReallyCrappyRamp(i);
 
+		//TODO: Add in the wheel circumference when trevor is ready for it
 		compounded_left += travel_left;
 		compounded_right += travel_right;
 
@@ -120,7 +135,7 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 				motion_plan_result(
 					compounded_left,
 					velocity_left,
-					time_delta
+					time_delta * time_unit_multiplier
 					)
 				);
 
@@ -128,15 +143,13 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 				motion_plan_result(
 					compounded_right,
 					velocity_right,
-					time_delta
+					time_delta * time_unit_multiplier
 					)
 				);
 
 		last_position_left = normal_left;
 		last_position_right = normal_right;
 		last_position_center = spline_center;
-
-		time_compounded += time_delta;
 	}
 
 #if GENERATE_DEBUG
