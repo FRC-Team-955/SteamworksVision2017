@@ -130,8 +130,8 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 			}
 
 #if DEBUG_SHOW_OVERLAYS
-			rectangle(display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
-			line(display_buffer, GetCenter(left_stripe), GetCenter(right_stripe), Scalar(0, 0, 255), 3, CV_AA); 
+			rectangle(*display_buffer, goal_center_Rect, Scalar(255, 0, 0), 2);  
+			line(*display_buffer, GetCenter(left_stripe), GetCenter(right_stripe), Scalar(0, 0, 255), 3, CV_AA); 
 			rectangle(*display_buffer, left_hist_portion_Rect, Scalar(255, 0, 255), 2);  
 			rectangle(*display_buffer, right_hist_portion_Rect, Scalar(255,0, 255), 2);  
 #endif

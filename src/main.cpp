@@ -77,11 +77,13 @@ void* finder_thread (void* arg) {
 		pthread_mutex_unlock(&mode_mutex);
 
 		if (tempmode == "Peg\n") {
-			//finder->ProcessFrame(sensor->largeDepthCV, sensor->bgrmatCV, &display_buffer, &results);
-			results.slope_to_target = -1.0f;
-			results.distance_to_target = 90.0f;
-			results.target_x_offset = 90.0f;
-			results.stripes_found = 2;
+			finder->ProcessFrame(sensor->largeDepthCV, sensor->bgrmatCV, &display_buffer, &results);
+			//imshow("Color", display_buffer);
+			//cv::waitKey(1);
+			//results.slope_to_target = -1.0f;
+			//results.distance_to_target = 90.0f;
+			//results.target_x_offset = 90.0f;
+			//results.stripes_found = 2;
 			pugi::xml_node root_node = send_doc.append_child("root");	
 			root_node.append_attribute("stripes_found") = std::to_string(results.stripes_found).c_str();	
 			if (results.stripes_found == 2) {

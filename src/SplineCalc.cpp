@@ -96,7 +96,9 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 		cv::Point2f spline_derive = RationalVecConv(derivation.evaluate(i).result());
 
 #if GENERATE_DEBUG
-		save_center_display << spline_center.x << "," << spline_center.y << std::endl;
+		if (!already_generated) {
+			save_center_display << spline_center.x << "," << spline_center.y << std::endl;
+		}
 #endif
 
 		/* 
@@ -134,8 +136,8 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 		compounded_right += travel_right;
 
 #if GENERATE_DEBUG
-		save_left_display 	<< normal_left.x 	<< ", " << normal_left.y	<< ", " << travel_left / time_delta << std::endl;
-		save_right_display 	<< normal_right.x << ", " << normal_right.y	<< ", " << travel_right / time_delta << std::endl;
+			save_left_display 	<< normal_left.x 	<< ", " << normal_left.y	<< ", " << travel_left / time_delta << std::endl;
+			save_right_display 	<< normal_right.x << ", " << normal_right.y	<< ", " << travel_right / time_delta << std::endl;
 #endif
 
 		float velocity_left = (time_delta != 0 ? travel_left / time_delta : 0);
@@ -163,8 +165,11 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 	}
 
 #if GENERATE_DEBUG
-	for (int i = 0; i < ctrlp.size(); i+=2) {
-		save_points_display << ctrlp[i] << "," << ctrlp[i+1] << std::endl;
+	if (!already_generated) {
+		for (int i = 0; i < ctrlp.size(); i+=2) {
+			save_points_display << ctrlp[i] << "," << ctrlp[i+1] << std::endl;
+		}
+		already_generated = true;
 	}
 #endif
 
