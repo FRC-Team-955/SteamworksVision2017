@@ -87,8 +87,8 @@ void* finder_thread (void* arg) {
 			pugi::xml_node root_node = send_doc.append_child("root");	
 			root_node.append_attribute("stripes_found") = std::to_string(results.stripes_found).c_str();	
 			if (results.stripes_found == 2) {
-				left_tracks.empty(); left_tracks.clear();
-				right_tracks.empty(); right_tracks.clear();
+				left_tracks.clear();
+				right_tracks.clear();
 				calc->CalcPaths(&left_tracks, &right_tracks, results.slope_to_target, cv::Point2f(results.target_x_offset, results.distance_to_target));
 
 				pugi::xml_node spline_left_node = root_node.append_child("spline_left");	

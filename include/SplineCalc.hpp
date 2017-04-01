@@ -6,7 +6,7 @@
 #include <vector>
 #include <MiscImgproc.hpp>
 
-#define GENERATE_DEBUG true
+#define GENERATE_DEBUG false
 
 //Output CSV files for use in GNUPLOT
 #if GENERATE_DEBUG

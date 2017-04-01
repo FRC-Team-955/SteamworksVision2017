@@ -64,17 +64,16 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 	ctrlp[5] =  robot_origin.y + (ctrlpt_distance * 2.0f);  	// y2
 
 	//Last three are for the goal's position and vector
+	goal_position += end_offset
 	ctrlp[6] =  goal_position.x;  			// x3
 	ctrlp[7] =  goal_position.y;  			// y3
 
 	cv::Point2f first_outcrop = MoveAlongLine(goal_slope < 0, ctrlpt_distance, NegativeReciprocal(goal_slope), goal_position);
-	first_outcrop += end_offset;
 
 	ctrlp[8] = first_outcrop.x;  				// x4
 	ctrlp[9] = first_outcrop.y;  				// y4
 
 	cv::Point2f second_outcrop = MoveAlongLine(goal_slope < 0, ctrlpt_distance * 2.0f, NegativeReciprocal(goal_slope), goal_position);
-	second_outcrop += end_offset;
 
 	ctrlp[10] =  second_outcrop.x;  			// x5
 	ctrlp[11] =  second_outcrop.y;  			// y5
@@ -136,8 +135,10 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 		compounded_right += travel_right;
 
 #if GENERATE_DEBUG
+		if (!already_generated) {
 			save_left_display 	<< normal_left.x 	<< ", " << normal_left.y	<< ", " << travel_left / time_delta << std::endl;
 			save_right_display 	<< normal_right.x << ", " << normal_right.y	<< ", " << travel_right / time_delta << std::endl;
+		}
 #endif
 
 		float velocity_left = (time_delta != 0 ? travel_left / time_delta : 0);
@@ -169,8 +170,8 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 		for (int i = 0; i < ctrlp.size(); i+=2) {
 			save_points_display << ctrlp[i] << "," << ctrlp[i+1] << std::endl;
 		}
-		already_generated = true;
 	}
 #endif
 
+	already_generated = true;
 }
