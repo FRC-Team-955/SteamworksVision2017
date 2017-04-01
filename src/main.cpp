@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #include <SplineCalc.hpp>
 
-#define TEGRA FALSE
+#define TEGRA true
 Realsense* sensor;
 
 pugi::xml_document send_doc;
@@ -82,13 +82,13 @@ void* finder_thread (void* arg) {
 			results.distance_to_target = 90.0f;
 			results.target_x_offset = 90.0f;
 			results.stripes_found = 2;
-			(send_doc.append_child("root").append_attribute("stripes_found")) = std::to_string(results.stripes_found).c_str();	
+			pugi::xml_node root_node = send_doc.append_child("root");	
+			root_node.append_attribute("stripes_found") = std::to_string(results.stripes_found).c_str();	
 			if (results.stripes_found == 2) {
 				left_tracks.empty(); left_tracks.clear();
 				right_tracks.empty(); right_tracks.clear();
 				calc->CalcPaths(&left_tracks, &right_tracks, results.slope_to_target, cv::Point2f(results.target_x_offset, results.distance_to_target));
 
-				pugi::xml_node root_node = send_doc.append_child("root");	
 				pugi::xml_node spline_left_node = root_node.append_child("spline_left");	
 				pugi::xml_node spline_right_node = root_node.append_child("spline_right");	
 				for (int i = 0; i < left_tracks.size(); i++) {
@@ -142,14 +142,14 @@ void* finder_thread (void* arg) {
 
 		//This will not work on the tegra, and it also has issues with camera ambiguity (because of the -d arguement doesn't include a serial number)
 #if !TEGRA
-		if (lastmode != tempmode) {
-			if (tempmode == "Peg") {
-				std::string command = "v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(sf->sensor_options_peg_inst.exposure) + " -d 2";
-				system(command.c_str());
-			} else if (tempmode == "Live") {
-				system("v4l2-ctl --set-ctrl exposure_absolute=130 -d 2");
-			}
-		}
+				if (lastmode != tempmode) {
+					if (tempmode == "Peg") {
+						std::string command = "v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(sf->sensor_options_peg_inst.exposure) + " -d 2";
+						system(command.c_str());
+					} else if (tempmode == "Live") {
+						system("v4l2-ctl --set-ctrl exposure_absolute=130 -d 2");
+					}
+				}
 #endif
 		lastmode = tempmode;
 	}
@@ -157,39 +157,39 @@ void* finder_thread (void* arg) {
 }
 
 /*
-	int main () {
-	sf = new Settings();
-	SplineCalc* calc = new SplineCalc(
-	sf->imgproc_settings_peg_inst.spline_resolution,
-	sf->imgproc_settings_peg_inst.spline_wheel_radius,
-	sf->imgproc_settings_peg_inst.spline_max_velocity,
-	sf->imgproc_settings_peg_inst.spline_wheel_seperation,
-	sf->imgproc_settings_peg_inst.spline_ctrlpt_distance,
-	sf->imgproc_settings_peg_inst.spline_time_unit_multiplier
-	);
-	std::vector<SplineCalc::motion_plan_result> left_tracks;
-	std::vector<SplineCalc::motion_plan_result> right_tracks;
-	calc->CalcPaths(&left_tracks, &right_tracks, -0.5, cv::Point2f(90.0f, 90.0f));
-	pugi::xml_node root_node = send_doc.append_child("root");	
-	pugi::xml_node spline_left_node = root_node.append_child("spline_left");	
-	pugi::xml_node spline_right_node = root_node.append_child("spline_right");	
-	for (int i = 0; i < left_tracks.size(); i++) {
-	{
-	pugi::xml_node instance = spline_left_node.append_child(std::to_string(i).c_str());
-	instance.append_attribute("Distance") = left_tracks[i].compounded_distance;
-	instance.append_attribute("Velocity") = left_tracks[i].velocity;
-	instance.append_attribute("DeltaT") = left_tracks[i].time_delta;
-	}
-	{
-	pugi::xml_node instance = spline_right_node.append_child(std::to_string(i).c_str());
-	instance.append_attribute("Distance") = right_tracks[i].compounded_distance;
-	instance.append_attribute("Velocity") = right_tracks[i].velocity;
-	instance.append_attribute("DeltaT") = right_tracks[i].time_delta;
-	}
-	}
-	send_doc.save(std::cout);
-	}
-	*/
+   int main () {
+   sf = new Settings();
+   SplineCalc* calc = new SplineCalc(
+   sf->imgproc_settings_peg_inst.spline_resolution,
+   sf->imgproc_settings_peg_inst.spline_wheel_radius,
+   sf->imgproc_settings_peg_inst.spline_max_velocity,
+   sf->imgproc_settings_peg_inst.spline_wheel_seperation,
+   sf->imgproc_settings_peg_inst.spline_ctrlpt_distance,
+   sf->imgproc_settings_peg_inst.spline_time_unit_multiplier
+   );
+   std::vector<SplineCalc::motion_plan_result> left_tracks;
+   std::vector<SplineCalc::motion_plan_result> right_tracks;
+   calc->CalcPaths(&left_tracks, &right_tracks, -0.5, cv::Point2f(90.0f, 90.0f));
+   pugi::xml_node root_node = send_doc.append_child("root");	
+   pugi::xml_node spline_left_node = root_node.append_child("spline_left");	
+   pugi::xml_node spline_right_node = root_node.append_child("spline_right");	
+   for (int i = 0; i < left_tracks.size(); i++) {
+   {
+   pugi::xml_node instance = spline_left_node.append_child(std::to_string(i).c_str());
+   instance.append_attribute("Distance") = left_tracks[i].compounded_distance;
+   instance.append_attribute("Velocity") = left_tracks[i].velocity;
+   instance.append_attribute("DeltaT") = left_tracks[i].time_delta;
+   }
+   {
+   pugi::xml_node instance = spline_right_node.append_child(std::to_string(i).c_str());
+   instance.append_attribute("Distance") = right_tracks[i].compounded_distance;
+   instance.append_attribute("Velocity") = right_tracks[i].velocity;
+   instance.append_attribute("DeltaT") = right_tracks[i].time_delta;
+   }
+   }
+   send_doc.save(std::cout);
+   }
+ */
 
 int main (int argc, char** argv) {
 	//Command args
