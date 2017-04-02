@@ -81,7 +81,7 @@ void* finder_thread (void* arg) {
 			//imshow("Color", display_buffer);
 			//cv::waitKey(1);
 			//results.slope_to_target = -1.0f;
-			//results.distance_to_target = 90.0f;
+			std::cout << results.distance_to_target << std::endl;
 			//results.target_x_offset = 90.0f;
 			//results.stripes_found = 2;
 			pugi::xml_node root_node = send_doc.append_child("root");	

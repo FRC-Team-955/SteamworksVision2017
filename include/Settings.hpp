@@ -13,7 +13,7 @@ class Settings {
 			int sample_slicing_area_min = 200;
 
 			float stripe_dimension_ratio = 2.0f/5.0f;
-			float stripe_dimension_ratio_tolerance = 0.3f;
+			float stripe_dimension_ratio_tolerance = 1.3f;
 
 			int matcher_bias_x = 1;
 			int matcher_bias_y = 100;
@@ -29,7 +29,7 @@ class Settings {
 
 			float spline_time_unit_multiplier = 60.0f * 1000.0f; //Crappy hack
 
-			cv::Point2f end_offset = cv::Point2f(4.0f, -18.0f);
+			cv::Point2f end_offset = cv::Point2f(-11.0f, 0.0f);
 		} imgproc_settings_peg_inst;
 
 		struct server_options {
@@ -44,8 +44,8 @@ class Settings {
 			int depth_height = 360;
 			int depth_width = 480;
 			int exposure = 30;
-			//char serial[11] = "2391016026";
-			char serial[11] = "2391000767"; 
+			char serial[11] = "2391016026";
+			//char serial[11] = "2391000767"; 
 			//char serial[11] = "2391011471"; 
 		} sensor_options_peg_inst;
 

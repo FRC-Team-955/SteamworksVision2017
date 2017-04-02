@@ -58,25 +58,25 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 	ctrlp[1] =  robot_origin.y;  				// y0
 
 	ctrlp[2] =  robot_origin.x;  				// x1
-	ctrlp[3] =  robot_origin.y + ctrlpt_distance; 				// y1
+	ctrlp[3] =  robot_origin.y + ctrlpt_distance * 1.0f; 				// y1
 
 	ctrlp[4] =  robot_origin.x;  				// x2
 	ctrlp[5] =  robot_origin.y + (ctrlpt_distance * 2.0f);  	// y2
 
 	//Last three are for the goal's position and vector
-	goal_position += end_offset
-	ctrlp[6] =  goal_position.x;  			// x3
-	ctrlp[7] =  goal_position.y;  			// y3
+	goal_position += end_offset;
+	ctrlp[10] =  goal_position.x;  			// x3
+	ctrlp[11] =  goal_position.y;  			// y3
 
-	cv::Point2f first_outcrop = MoveAlongLine(goal_slope < 0, ctrlpt_distance, NegativeReciprocal(goal_slope), goal_position);
+	cv::Point2f first_outcrop = MoveAlongLine(goal_slope > 0, ctrlpt_distance * 1.0f, NegativeReciprocal(goal_slope), goal_position);
 
 	ctrlp[8] = first_outcrop.x;  				// x4
 	ctrlp[9] = first_outcrop.y;  				// y4
 
-	cv::Point2f second_outcrop = MoveAlongLine(goal_slope < 0, ctrlpt_distance * 2.0f, NegativeReciprocal(goal_slope), goal_position);
+	cv::Point2f second_outcrop = MoveAlongLine(goal_slope > 0, ctrlpt_distance * 2.0f, NegativeReciprocal(goal_slope), goal_position);
 
-	ctrlp[10] =  second_outcrop.x;  			// x5
-	ctrlp[11] =  second_outcrop.y;  			// y5
+	ctrlp[6] =  second_outcrop.x;  			// x5
+	ctrlp[7] =  second_outcrop.y;  			// y5
 
 	spline.setCtrlp(ctrlp);
 
