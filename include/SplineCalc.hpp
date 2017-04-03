@@ -29,7 +29,8 @@ class SplineCalc {
 		float step = 0.0f;
 		bool already_generated = false;
 
-		float time_unit_multiplier = 0.0f;
+		float delta_time = 0.0f;
+
 		cv::Point2f robot_origin = cv::Point2f(0.0f, 0.0f);
 		cv::Point2f end_offset = cv::Point2f(0.0f, 0.0f);
 
@@ -40,6 +41,8 @@ class SplineCalc {
 		std::ofstream save_points_display; 	
 #endif
 
+		float SplineChopRecurse (float max_travel, float start, float end, float tolerance, ts::BSpline* spline);
+
 	public:
 		SplineCalc(
 				int resolution, 
@@ -47,18 +50,21 @@ class SplineCalc {
 				float max_velocity, float 
 				wheel_seperation, 
 				float ctrlpt_distance, 
-				float time_unit_multiplier, 
+				float delta_time, 
 				cv::Point2f end_offset);
 
 
 		float ReallyCrappyRamp (float i);
 
 		struct motion_plan_result {
-			float compounded_distance, velocity, time_delta;
+			float compounded_distance, velocity, time_delta, spline_position;
 			motion_plan_result (float compounded_distance, float velocity, float time_delta) {
 				this->compounded_distance = compounded_distance;
 				this->velocity = velocity;
 				this->time_delta = time_delta;
+			}
+			motion_plan_result (float spline_position) {
+				this->spline_position = spline_position;
 			}
 		};
 
@@ -67,6 +73,7 @@ class SplineCalc {
 		cv::Point2f RationalVecConv(std::vector<ts::rational>* input);
 
 		cv::Point2f RationalVecConv(std::vector<ts::rational> input);
+
 
 };
 #endif
