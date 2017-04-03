@@ -29,7 +29,7 @@ class Settings {
 
 			float spline_time_unit_multiplier = 60.0f * 1000.0f; //Crappy hack
 
-			cv::Point2f end_offset = cv::Point2f(-11.0f, 0.0f);
+			cv::Point2f end_offset = cv::Point2f(0.0f, 0.0f);
 		} imgproc_settings_peg_inst;
 
 		struct server_options {
