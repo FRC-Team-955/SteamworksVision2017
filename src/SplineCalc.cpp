@@ -96,7 +96,7 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 	cv::Point2f spline_end_point = RationalVecConv(spline.evaluate(1.0f).result());
 
 	bool first = true;
-	float max_accel_in = 2.5f;
+	float max_accel_in = 20.5f;
 	float max_accel = (max_accel_in / 60.0f) * (delta_time / 1000);
 
 	float max_travel = (max_velocity / 60.0f) * (delta_time / 1000);
@@ -107,7 +107,7 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 				center_line_last_distance = max_travel;
 			}
 		}
-		std::cout << "center_line_last_distance: " << center_line_last_distance << "\tmax_travel: " << max_travel << std::endl;
+		//std::cout << "center_line_last_distance: " << center_line_last_distance << "\tmax_travel: " << max_travel << std::endl;
 		i = SplineChopRecurse(center_line_last_distance, i, 1.0f, 0.0005f, &spline); //Find the next multiple of the max_travel along this spline
 		cv::Point2f pos_center = RationalVecConv(spline.evaluate(i).result());
 
@@ -147,10 +147,26 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 			save_left_display 	<< normal_left.x 		<< ", " 	<< normal_left.y		<< ", " << (travel_left 	/ delta_time) * 60 * 1000 << std::endl;
 			save_right_display 	<< normal_right.x 	<< ", " 	<< normal_right.y		<< ", " << (travel_right 	/ delta_time) * 60 * 1000 << std::endl;
 			save_center_display 	<< spline_center.x 	<< "," 	<< spline_center.y 	<< ", " << (travel_center 	/ delta_time) * 60 * 1000 << std::endl;
-			//std::cout << "Left Path: i: "	<< i << " velocity: " << (travel_right / delta_time) * 60 * 1000 << std::endl;
-			//std::cout << "Left Path: i: "	<< i << " velocity: " << travel_right << std::endl;
 		}
 #endif
+		compounded_left += travel_left;
+		compounded_right += travel_right;
+
+		left_tracks->push_back(
+				motion_plan_result(
+					compounded_left,
+					(travel_left / delta_time) * 60 * 1000,
+					delta_time
+					)
+				);
+
+		right_tracks->push_back(
+				motion_plan_result(
+					compounded_right,
+					(travel_right / delta_time) * 60 * 1000,
+					delta_time
+					)
+				);
 
 		normal_right_last = normal_right;
 		normal_left_last = normal_left;

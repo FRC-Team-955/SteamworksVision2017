@@ -27,7 +27,7 @@ class Settings {
 			float spline_wheel_seperation = 31.0f / 2.0f;
 			float spline_ctrlpt_distance = 10.0f;
 
-			float delta_time = 1.0f; 
+			float delta_time = 20.0f; 
 
 			cv::Point2f end_offset = cv::Point2f(0.0f, 0.0f);
 		} imgproc_settings_peg_inst;
