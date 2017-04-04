@@ -78,20 +78,21 @@ void* finder_thread (void* arg) {
 
 		if (tempmode == "Peg\n") {
 			finder->ProcessFrame(sensor->largeDepthCV, sensor->bgrmatCV, &display_buffer, &results);
-			//imshow("Color", display_buffer);
-			//cv::waitKey(1);
+			imshow("Color", display_buffer);
+			//std::cout << "Slope: " << results.slope_to_target << std::endl;
+			cv::waitKey(1);
 			//results.slope_to_target = -1.0f;
 			//std::cout << results.distance_to_target << std::endl;
 			//results.target_x_offset = 90.0f;
 			//results.stripes_found = 2;
 			pugi::xml_node root_node = send_doc.append_child("root");	
 			root_node.append_attribute("stripes_found") = std::to_string(results.stripes_found).c_str();	
-			if (/*results.stripes_found == 2*/ true) {
+			if (results.stripes_found == 2) {
 				left_tracks.clear();
 				right_tracks.clear();
-				//calc->CalcPaths(&left_tracks, &right_tracks, results.slope_to_target, cv::Point2f(results.target_x_offset, results.distance_to_target));
+				calc->CalcPaths(&left_tracks, &right_tracks, results.slope_to_target, cv::Point2f(results.target_x_offset, results.distance_to_target));
 				//calc->CalcPaths(&left_tracks, &right_tracks, 0.0000001, cv::Point2f(-20.0f, 90.0f));
-				calc->CalcPaths(&left_tracks, &right_tracks, 0.0000001, cv::Point2f(0.0f, 90.0f));
+				//calc->CalcPaths(&left_tracks, &right_tracks, 0.0000001, cv::Point2f(50.0f, 180.0f));
 
 				pugi::xml_node spline_left_node = root_node.append_child("spline_left");	
 				pugi::xml_node spline_right_node = root_node.append_child("spline_right");	
@@ -161,6 +162,7 @@ void* finder_thread (void* arg) {
 	return NULL;
 }
 
+/*
 int main () {
 	sf = new Settings();
 
@@ -185,8 +187,9 @@ int main () {
 		std::cout << "{" << right_tracks[i].compounded_distance << "," << right_tracks[i].velocity << "," << right_tracks[i].time_delta << "}," << std::endl;
 	}
 }
+*/
 
-int gmain (int argc, char** argv) {
+int main (int argc, char** argv) {
 	//Command args
 	if (argc < 2) {
 		std::cerr << "Usage: " <<

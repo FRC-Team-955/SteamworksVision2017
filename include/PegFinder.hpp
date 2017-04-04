@@ -37,6 +37,8 @@ class PegFinder {
 
 		Median<float>* distance_median;
 		Median<float>* angle_median;
+		Median<float>* slope_median;
+		Median<float>* target_x_offset_median;
 
 		//Create matrices/kernels
 		Mat raw_hsv_color; 

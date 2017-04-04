@@ -6,7 +6,7 @@
 #include <vector>
 #include <MiscImgproc.hpp>
 
-#define GENERATE_DEBUG false
+#define GENERATE_DEBUG true
 
 //Output CSV files for use in GNUPLOT
 #if GENERATE_DEBUG
@@ -41,7 +41,7 @@ class SplineCalc {
 		std::ofstream save_points_display; 	
 #endif
 
-		float SplineChopRecurse (float max_travel, float start, float end, float tolerance, ts::BSpline* spline);
+		float SplineChopRecurse (float max_travel, float start, float end, float tolerance, ts::BSpline* spline, int depth);
 
 	public:
 		SplineCalc(

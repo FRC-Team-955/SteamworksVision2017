@@ -8,8 +8,10 @@ PegFinder::PegFinder(Settings* sf) {
 
 	matcher = new StripeMatcher (sf->imgproc_settings_peg_inst.matcher_bias_x, sf->imgproc_settings_peg_inst.matcher_bias_y);
 
-	distance_median 	= new Median<float>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
-	angle_median 		= new Median<float>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
+	distance_median 			= new Median<float>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
+	angle_median 				= new Median<float>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
+	slope_median 				= new Median<float>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
+	target_x_offset_median	= new Median<float>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
 
 	//morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_open"] + 1, 2*(*imgproc_save)["morph_open"]+1 ), Point( (*imgproc_save)["morph_open"], (*imgproc_save)["morph_open"] ) ); //Make sure that objects have a certain area
 	//morph_close_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_close"] + 1, 2*(*imgproc_save)["morph_close"]+1 ), Point( (*imgproc_save)["morph_close"], (*imgproc_save)["morph_close"] ) ); //Make sure that objects have a certain area
@@ -148,7 +150,7 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 			int x_center_right_Rect = MidPoint(right_hist_portion_Rect.tl(), right_hist_portion_Rect.br()).x;
 
 
-			int distance_to_screen_edge = sf->sensor_options_peg_inst.depth_width / 2;
+			int distance_to_screen_edge = sf->sensor_options_peg_inst.bgr_width / 2;
 
 			//Eight and a quarter inches is how far apart the centers of the stripes should be, by spec
 			int eight_and_quarter_inches_in_px = PointDistance(GetCenter(left_stripe), GetCenter(right_stripe));
@@ -161,6 +163,7 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 			//Left and right center depths in inches
 			float depth_left_Rect_inch 	= 	(float)depth_left_Rect 	* 0.0393701f;
 			float depth_right_Rect_inch 	= 	(float)depth_right_Rect * 0.0393701f;
+			std::cout << "Left: " << depth_left_Rect_inch << " Right: " << depth_right_Rect_inch << std::endl;
 
 			//Slope from one side of the goal to the other as alighned too our plane
 			float depth_x_slope = (float)(depth_right_Rect_inch - depth_left_Rect_inch) / (float)(x_center_right_Rect_inch - x_center_left_Rect_inch); 
@@ -175,10 +178,12 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 				results->distance_found = true;
 				distance_median->insert_median_data((depth_left_Rect_inch + depth_left_Rect_inch) / 2);
 				angle_median->insert_median_data(angle);
+				slope_median->insert_median_data(depth_x_slope);
+				target_x_offset_median->insert_median_data(magnitude_x_inch);
 				results->distance_to_target = distance_median->compute_median();
 				results->angle_to_target = angle_median->compute_median(); 
-				results->slope_to_target = depth_x_slope;
-				results->target_x_offset = magnitude_x_inch;
+				results->slope_to_target = slope_median->compute_median();
+				results->target_x_offset = target_x_offset_median->compute_median();
 			} else {
 				results->distance_found = false;
 			}

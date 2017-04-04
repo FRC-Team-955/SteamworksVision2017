@@ -108,7 +108,7 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 			}
 		}
 		//std::cout << "center_line_last_distance: " << center_line_last_distance << "\tmax_travel: " << max_travel << std::endl;
-		i = SplineChopRecurse(center_line_last_distance, i, 1.0f, 0.0005f, &spline); //Find the next multiple of the max_travel along this spline
+		i = SplineChopRecurse(center_line_last_distance, i, 1.0f, 0.001f, &spline, 0); //Find the next multiple of the max_travel along this spline
 		cv::Point2f pos_center = RationalVecConv(spline.evaluate(i).result());
 
 		cv::Point2f spline_center = RationalVecConv(spline.evaluate(i).result());
@@ -185,8 +185,9 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 	already_generated = true;
 }
 
-float SplineCalc::SplineChopRecurse (float max_travel, float start, float end, float tolerance, ts::BSpline* spline) {
-	//std::cout << "--------------------------------------------------" << std::endl;
+float SplineCalc::SplineChopRecurse (float max_travel, float start, float end, float tolerance, ts::BSpline* spline, int depth) {
+	depth++;
+	//std::cout << "Depth: " << depth << std::endl;
 	if(start - end == 0) {
 		return start;
 	}
@@ -216,10 +217,10 @@ float SplineCalc::SplineChopRecurse (float max_travel, float start, float end, f
 	} else {
 		if (max_travel > distance_to_midpt && max_travel < distance_to_end) {
 			//std::cout << "Pick higher than midpoint" << std::endl;
-			return SplineChopRecurse(max_travel - (distance_to_midpt), midpoint, end, tolerance, spline);
+			return SplineChopRecurse(max_travel - (distance_to_midpt), midpoint, end, tolerance, spline, depth);
 		} else {
 			//std::cout << "Pick lower than midpoint" << std::endl;
-			return SplineChopRecurse(max_travel, start, midpoint, tolerance, spline);
+			return SplineChopRecurse(max_travel, start, midpoint, tolerance, spline, depth);
 		} 
 	} 
 	//std::cout << "Default!!" << std::endl;

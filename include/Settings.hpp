@@ -5,7 +5,7 @@ class Settings {
 			int histogram_max = 50000;
 			int histogram_min = 200;
 
-			float histogram_percentile = 40.0;
+			float histogram_percentile = 80.0;
 
 			int morph_close = 5;
 			int morph_open = 5;
@@ -29,7 +29,7 @@ class Settings {
 
 			float delta_time = 20.0f; 
 
-			cv::Point2f end_offset = cv::Point2f(0.0f, 0.0f);
+			cv::Point2f end_offset = cv::Point2f(-2.0f, -12.0f);
 		} imgproc_settings_peg_inst;
 
 		struct server_options {
