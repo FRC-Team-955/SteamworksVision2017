@@ -163,7 +163,6 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 			//Left and right center depths in inches
 			float depth_left_Rect_inch 	= 	(float)depth_left_Rect 	* 0.0393701f;
 			float depth_right_Rect_inch 	= 	(float)depth_right_Rect * 0.0393701f;
-			std::cout << "Left: " << depth_left_Rect_inch << " Right: " << depth_right_Rect_inch << std::endl;
 
 			//Slope from one side of the goal to the other as alighned too our plane
 			float depth_x_slope = (float)(depth_right_Rect_inch - depth_left_Rect_inch) / (float)(x_center_right_Rect_inch - x_center_left_Rect_inch); 

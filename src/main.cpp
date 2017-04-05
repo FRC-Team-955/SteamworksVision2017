@@ -78,9 +78,9 @@ void* finder_thread (void* arg) {
 
 		if (tempmode == "Peg\n") {
 			finder->ProcessFrame(sensor->largeDepthCV, sensor->bgrmatCV, &display_buffer, &results);
-			imshow("Color", display_buffer);
+			//imshow("Color", display_buffer);
 			//std::cout << "Slope: " << results.slope_to_target << std::endl;
-			cv::waitKey(1);
+			//cv::waitKey(1);
 			//results.slope_to_target = -1.0f;
 			//std::cout << results.distance_to_target << std::endl;
 			//results.target_x_offset = 90.0f;

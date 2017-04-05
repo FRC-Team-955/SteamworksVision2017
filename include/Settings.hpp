@@ -44,9 +44,9 @@ class Settings {
 			int depth_height = 360;
 			int depth_width = 480;
 			int exposure = 30;
-			char serial[11] = "2391016026";
+			//char serial[11] = "2391016026";
 			//char serial[11] = "2391000767"; 
-			//char serial[11] = "2391011471"; 
+			char serial[11] = "2391011471"; 
 		} sensor_options_peg_inst;
 
 		struct slider_limits_peg {

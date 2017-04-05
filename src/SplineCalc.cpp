@@ -172,7 +172,7 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 		normal_left_last = normal_left;
 		pos_center_last = pos_center;
 
-	} while (MiscImgproc::PointDistance(pos_center_last, spline_end_point) > max_travel);
+	} while (MiscImgproc::PointDistance(pos_center_last, spline_end_point) > max_travel && i < 1.0f);
 
 #if GENERATE_DEBUG
 	if (!already_generated) {
@@ -189,8 +189,14 @@ float SplineCalc::SplineChopRecurse (float max_travel, float start, float end, f
 	depth++;
 	//std::cout << "Depth: " << depth << std::endl;
 	if(start - end == 0) {
-		return start;
+		return end;
 	}
+	//TODO Add all of this stuff to the settings file
+	if (depth > 20) {
+		//std::cerr << "Went too deep" << std::endl;
+		return end;
+	}
+
 	float distance_to_end = MiscImgproc::PointDistance(
 			RationalVecConv(spline->evaluate(start).result()),
 			RationalVecConv(spline->evaluate(end).result())
@@ -224,5 +230,5 @@ float SplineCalc::SplineChopRecurse (float max_travel, float start, float end, f
 		} 
 	} 
 	//std::cout << "Default!!" << std::endl;
-	return start;
+	return end;
 }
