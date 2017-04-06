@@ -15,7 +15,6 @@ SplineCalc::SplineCalc(
 	this->ctrlpt_distance = ctrlpt_distance;
 	this->delta_time = delta_time;
 	this->end_offset = end_offset;
-	step = 1.0f / (float)resolution;
 
 #if GENERATE_DEBUG
 	save_center_display.open("/tmp/center_display.csv");
@@ -97,6 +96,7 @@ void SplineCalc::CalcPaths(std::vector<motion_plan_result>* left_tracks, std::ve
 
 	bool first = true;
 	float max_accel_in = 20.5f;
+	//float max_accel_in = 60.5f;
 	float max_accel = (max_accel_in / 60.0f) * (delta_time / 1000);
 
 	float max_travel = (max_velocity / 60.0f) * (delta_time / 1000);

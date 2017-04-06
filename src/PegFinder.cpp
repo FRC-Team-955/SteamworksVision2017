@@ -13,6 +13,9 @@ PegFinder::PegFinder(Settings* sf) {
 	slope_median 				= new Median<float>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
 	target_x_offset_median	= new Median<float>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
 
+	depth_left_median_mm 	= new Median<int>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
+	depth_right_median_mm	= new Median<int>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
+
 	//morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_open"] + 1, 2*(*imgproc_save)["morph_open"]+1 ), Point( (*imgproc_save)["morph_open"], (*imgproc_save)["morph_open"] ) ); //Make sure that objects have a certain area
 	//morph_close_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_close"] + 1, 2*(*imgproc_save)["morph_close"]+1 ), Point( (*imgproc_save)["morph_close"], (*imgproc_save)["morph_close"] ) ); //Make sure that objects have a certain area
 	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 5, 3 ), Point( 3, 2 ) ); //Make sure that objects have a certain area
@@ -145,6 +148,12 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 			//TODO: Document the hell out of this, and reorganize (Class?)
 			int depth_left_Rect = hist_inner_roi_left->take_percentile(sf->imgproc_settings_peg_inst.histogram_percentile);
 			int depth_right_Rect = hist_inner_roi_right->take_percentile(sf->imgproc_settings_peg_inst.histogram_percentile);
+			depth_right_Rect += -10; //TODO: HORRIBLE MAGIC NUMBER - AT LEAST ADD IT TO SETTINGS
+			depth_left_median_mm->insert_median_data(depth_left_Rect); //Make new variables for these
+			depth_right_median_mm->insert_median_data(depth_right_Rect);
+			depth_left_Rect = depth_left_median_mm->compute_median(); 
+			depth_right_Rect = depth_right_median_mm->compute_median(); 
+			std::cout << "Left: " << depth_left_Rect << " Right: " << depth_right_Rect << std::endl;
 
 			int x_center_left_Rect 	= MidPoint(left_hist_portion_Rect.tl(),  left_hist_portion_Rect.br()).x;
 			int x_center_right_Rect = MidPoint(right_hist_portion_Rect.tl(), right_hist_portion_Rect.br()).x;

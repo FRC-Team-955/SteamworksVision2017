@@ -5,7 +5,7 @@ class Settings {
 			int histogram_max = 50000;
 			int histogram_min = 200;
 
-			float histogram_percentile = 80.0;
+			float histogram_percentile = 75.0;
 
 			int morph_close = 5;
 			int morph_open = 5;
@@ -23,13 +23,14 @@ class Settings {
 
 			int spline_resolution = 300;
 			float spline_wheel_radius = 2.1f; //Doesn't matter for now... Damnit trevor
-			float spline_max_velocity = 4000;
+			float spline_max_velocity = 6500;
 			float spline_wheel_seperation = 31.0f / 2.0f;
 			float spline_ctrlpt_distance = 10.0f;
 
 			float delta_time = 20.0f; 
 
-			cv::Point2f end_offset = cv::Point2f(-2.0f, -12.0f);
+			cv::Point2f end_offset = cv::Point2f(-1.0f, -5.0f);
+			//cv::Point2f end_offset = cv::Point2f(20.0f, -5.0f);
 		} imgproc_settings_peg_inst;
 
 		struct server_options {
@@ -44,9 +45,9 @@ class Settings {
 			int depth_height = 360;
 			int depth_width = 480;
 			int exposure = 30;
-			//char serial[11] = "2391016026";
+			char serial[11] = "2391016026";
 			//char serial[11] = "2391000767"; 
-			char serial[11] = "2391011471"; 
+			//char serial[11] = "2391011471"; 
 		} sensor_options_peg_inst;
 
 		struct slider_limits_peg {

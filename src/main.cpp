@@ -11,6 +11,7 @@
 #include <vector>
 #include <sys/stat.h>
 #include <SplineCalc.hpp>
+#include <unistd.h>
 
 #define TEGRA true
 Realsense* sensor;
@@ -79,8 +80,8 @@ void* finder_thread (void* arg) {
 		if (tempmode == "Peg\n") {
 			finder->ProcessFrame(sensor->largeDepthCV, sensor->bgrmatCV, &display_buffer, &results);
 			//imshow("Color", display_buffer);
-			//std::cout << "Slope: " << results.slope_to_target << std::endl;
 			//cv::waitKey(1);
+			//std::cout << "Slope: " << results.slope_to_target << std::endl;
 			//results.slope_to_target = -1.0f;
 			//std::cout << results.distance_to_target << std::endl;
 			//results.target_x_offset = 90.0f;
@@ -217,6 +218,9 @@ int main (int argc, char** argv) {
 	Networking::Server* serv = new Networking::Server(sf->server_options_inst.server_port);			
 
 	finder = new PegFinder(sf);
+
+	std::cout << "Wating for camera exposure to set (1 second)" << std::endl;
+	usleep(1000 * 1000 * 1); //Make sure that the camera has had time to adjust to the exposure set
 
 	pthread_mutex_init(&xml_mutex, NULL);
 	pthread_create(&xml_thread, NULL, &finder_thread, argv[1]);
