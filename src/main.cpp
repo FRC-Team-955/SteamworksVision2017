@@ -162,7 +162,6 @@ void* finder_thread (void* arg) {
 	return NULL;
 }
 
-/*
 int main () {
 	sf = new Settings();
 
@@ -178,7 +177,7 @@ int main () {
 
 	std::vector<SplineCalc::motion_plan_result> left_tracks;
 	std::vector<SplineCalc::motion_plan_result> right_tracks;
-	calc->CalcPaths(&left_tracks, &right_tracks, 0.0000001, cv::Point2f(0.0f, 90.0f));
+	calc->CalcPaths(&left_tracks, &right_tracks, 0.5, cv::Point2f(-80.0f, 90.0f));
 
 	pugi::xml_node root_node = send_doc.append_child("root");	
 	pugi::xml_node spline_left_node = root_node.append_child("spline_left");	
@@ -187,9 +186,8 @@ int main () {
 		std::cout << "{" << right_tracks[i].compounded_distance << "," << right_tracks[i].velocity << "," << right_tracks[i].time_delta << "}," << std::endl;
 	}
 }
-*/
 
-int main (int argc, char** argv) {
+int gmain (int argc, char** argv) {
 	//Command args
 	if (argc < 2) {
 		std::cerr << "Usage: " <<
