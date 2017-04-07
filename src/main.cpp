@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #define TEGRA true
+#define DEBUG false
 Realsense* sensor;
 
 pugi::xml_document send_doc;
@@ -23,7 +24,9 @@ Settings* sf;
 pthread_mutex_t xml_mutex;
 pthread_mutex_t mode_mutex;
 pthread_t xml_thread;
+
 PegFinder* finder;
+
 std::string out_string = "";
 std::string mode = "Peg\n";
 
@@ -33,16 +36,7 @@ void* finder_thread (void* arg) {
 	std::string tempmode = "";
 	std::string lastmode = "";
 
-	//TODO: Make sure the save file loading is thread safe!
-	SplineCalc* calc = new SplineCalc(
-			sf->imgproc_settings_peg_inst.spline_resolution,
-			sf->imgproc_settings_peg_inst.spline_wheel_radius,
-			sf->imgproc_settings_peg_inst.spline_max_velocity,
-			sf->imgproc_settings_peg_inst.spline_wheel_seperation,
-			sf->imgproc_settings_peg_inst.spline_ctrlpt_distance,
-			sf->imgproc_settings_peg_inst.delta_time,
-			sf->imgproc_settings_peg_inst.end_offset
-			);
+	SplineCalc* calc = new SplineCalc(sf->spline_generator_options_inst);
 
 	Mat encoded_buffer (
 			sf->sensor_options_peg_inst.bgr_height,
@@ -79,21 +73,16 @@ void* finder_thread (void* arg) {
 
 		if (tempmode == "Peg\n") {
 			finder->ProcessFrame(sensor->largeDepthCV, sensor->bgrmatCV, &display_buffer, &results);
-			//imshow("Color", display_buffer);
-			//cv::waitKey(1);
-			//std::cout << "Slope: " << results.slope_to_target << std::endl;
-			//results.slope_to_target = -1.0f;
-			//std::cout << results.distance_to_target << std::endl;
-			//results.target_x_offset = 90.0f;
-			//results.stripes_found = 2;
+#if DEBUG
+			imshow("Color", display_buffer);
+			cv::waitKey(1);
+#endif
 			pugi::xml_node root_node = send_doc.append_child("root");	
 			root_node.append_attribute("stripes_found") = std::to_string(results.stripes_found).c_str();	
 			if (results.stripes_found == 2) {
 				left_tracks.clear();
 				right_tracks.clear();
 				calc->CalcPaths(&left_tracks, &right_tracks, results.slope_to_target, cv::Point2f(results.target_x_offset, results.distance_to_target));
-				//calc->CalcPaths(&left_tracks, &right_tracks, 0.0000001, cv::Point2f(-20.0f, 90.0f));
-				//calc->CalcPaths(&left_tracks, &right_tracks, 0.0000001, cv::Point2f(50.0f, 180.0f));
 
 				pugi::xml_node spline_left_node = root_node.append_child("spline_left");	
 				pugi::xml_node spline_right_node = root_node.append_child("spline_right");	
@@ -113,14 +102,15 @@ void* finder_thread (void* arg) {
 				}
 			}
 			send_doc.save(ss, "", pugi::format_raw);
-			//send_doc.save(std::cout);
+#if DEBUG
+			send_doc.save(std::cout);
+#endif
 			ss << std::endl;
 
 			pthread_mutex_lock(&xml_mutex);
 			out_string = ss.str();
 			pthread_mutex_unlock(&xml_mutex);
 
-			//cv::waitKey(10);
 		} else if (tempmode == "Live\n") {
 			//TODO: Use a universal config system to determine the names of OpenCV windows
 			imshow("Color", *sensor->bgrmatCV);
@@ -129,7 +119,7 @@ void* finder_thread (void* arg) {
 			out_string = "Live Mode\n";
 			pthread_mutex_unlock(&xml_mutex);
 
-			memcpy(encoded_buffer.data, 
+			memcpy(encoded_buffer.data, //Encode the 16 bit depth image as a color image so we can review it later
 					(*sensor->largeDepthCV).data, 
 					sizeof(unsigned short) * encoded_buffer.rows * encoded_buffer.cols);
 
@@ -147,7 +137,10 @@ void* finder_thread (void* arg) {
 			pthread_mutex_unlock(&xml_mutex);
 		}
 
-		//This will not work on the tegra, and it also has issues with camera ambiguity (because of the -d arguement doesn't include a serial number)
+		/*
+		 * This will not work on the tegra because of driver issues, and it also has issues 
+		 * with camera ambiguity (because of the -d arguement doesn't include a serial number)
+		*/
 #if !TEGRA
 		if (lastmode != tempmode) {
 			if (tempmode == "Peg") {
@@ -160,35 +153,9 @@ void* finder_thread (void* arg) {
 #endif
 		lastmode = tempmode;
 	}
+	delete[] calc;
 	return NULL;
 }
-
-/*
-int main () {
-	sf = new Settings();
-
-	SplineCalc* calc = new SplineCalc(
-			sf->imgproc_settings_peg_inst.spline_resolution,
-			sf->imgproc_settings_peg_inst.spline_wheel_radius,
-			sf->imgproc_settings_peg_inst.spline_max_velocity,
-			sf->imgproc_settings_peg_inst.spline_wheel_seperation,
-			sf->imgproc_settings_peg_inst.spline_ctrlpt_distance,
-			sf->imgproc_settings_peg_inst.delta_time,
-			sf->imgproc_settings_peg_inst.end_offset
-			);
-
-	std::vector<SplineCalc::motion_plan_result> left_tracks;
-	std::vector<SplineCalc::motion_plan_result> right_tracks;
-	calc->CalcPaths(&left_tracks, &right_tracks, 0.0000001, cv::Point2f(0.0f, 90.0f));
-
-	pugi::xml_node root_node = send_doc.append_child("root");	
-	pugi::xml_node spline_left_node = root_node.append_child("spline_left");	
-	pugi::xml_node spline_right_node = root_node.append_child("spline_right");	
-	for (int i = 0; i < left_tracks.size(); i++) {
-		std::cout << "{" << right_tracks[i].compounded_distance << "," << right_tracks[i].velocity << "," << right_tracks[i].time_delta << "}," << std::endl;
-	}
-}
-*/
 
 int main (int argc, char** argv) {
 	//Command args
@@ -200,7 +167,7 @@ int main (int argc, char** argv) {
 
 	sf = new Settings();
 
-	//TODO: DO THIS USING API CALLS EWW
+	//Set the exposure
 	system("v4l2-ctl --set-ctrl exposure_auto=1 -d 2");
 	std::string command = "v4l2-ctl --set-ctrl exposure_absolute=" + std::to_string(sf->sensor_options_peg_inst.exposure) + " -d 2";
 	system(command.c_str());
@@ -219,8 +186,9 @@ int main (int argc, char** argv) {
 
 	finder = new PegFinder(sf);
 
+	//Make sure that the camera has had time to adjust to the exposure set
 	std::cout << "Wating for camera exposure to set (1 second)" << std::endl;
-	usleep(1000 * 1000 * 1); //Make sure that the camera has had time to adjust to the exposure set
+	usleep(1000 * 1000 * 1); 
 
 	pthread_mutex_init(&xml_mutex, NULL);
 	pthread_create(&xml_thread, NULL, &finder_thread, argv[1]);
@@ -230,14 +198,18 @@ int main (int argc, char** argv) {
 		serv->WaitForClientConnection();
 		while (serv->GetNetState()) {
 			std::string tempmode = serv->WaitForClientMessage();
-			//std::cerr << "Client Message: " << tempmode << std::endl;
+#if DEBUG
+			std::cout << "Client Message: " << tempmode << std::endl;
+#endif
 			pthread_mutex_lock(&mode_mutex);
 			mode = tempmode;
 			pthread_mutex_unlock(&mode_mutex);
 
 			pthread_mutex_lock(&xml_mutex);
 			serv->SendClientMessage(out_string.c_str());
-			//std::cerr << "Server Broadcast: " << out_string << std::endl;
+#if DEBUG
+			std::cout << "Server Broadcast" << std::endl;
+#endif
 			pthread_mutex_unlock(&xml_mutex);
 
 		}

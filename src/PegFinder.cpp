@@ -16,10 +16,8 @@ PegFinder::PegFinder(Settings* sf) {
 	depth_left_median_mm 	= new Median<int>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
 	depth_right_median_mm	= new Median<int>(sf->imgproc_settings_peg_inst.median_filter_stack_size,sf->imgproc_settings_peg_inst.median_filter_default);
 
-	//morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_open"] + 1, 2*(*imgproc_save)["morph_open"]+1 ), Point( (*imgproc_save)["morph_open"], (*imgproc_save)["morph_open"] ) ); //Make sure that objects have a certain area
-	//morph_close_struct_element = getStructuringElement(MORPH_RECT, Size( 2*(*imgproc_save)["morph_close"] + 1, 2*(*imgproc_save)["morph_close"]+1 ), Point( (*imgproc_save)["morph_close"], (*imgproc_save)["morph_close"] ) ); //Make sure that objects have a certain area
-	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 5, 3 ), Point( 3, 2 ) ); //Make sure that objects have a certain area
-	morph_open_struct_element = getStructuringElement(MORPH_RECT, Size( 7, 3 ), Point( 4, 2 ) ); //Make sure that objects have a certain area
+	morph_open_struct_element = getStructuringElement(MORPH_RECT, sf->imgproc_settings_peg_inst.morph_open_size, sf->imgproc_settings_peg_inst.morph_open_anchor ); 
+	morph_close_struct_element = getStructuringElement(MORPH_RECT, sf->imgproc_settings_peg_inst.morph_close_size, sf->imgproc_settings_peg_inst.morph_close_anchor ); 
 }
 
 void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_buffer, imgproc_results* results) {
@@ -114,7 +112,7 @@ void PegFinder::ProcessFrame(Mat* depth_image, Mat* color_image, Mat* display_bu
 			right_hist_portion_Rect.width -= cutoff;
 		}
 
-		//If cutting of the side of the box makes it too small, try to 
+		//If cutting of the side of the box makes it too small, move it to the other side
 
 		//{"sample_slicing_area_min"	,	10		}
 		if (left_hist_portion_Rect.area() > (sf->imgproc_settings_peg_inst.sample_slicing_area_min ^ 2) || right_hist_portion_Rect.area() > (sf->imgproc_settings_peg_inst.sample_slicing_area_min ^ 2)) {

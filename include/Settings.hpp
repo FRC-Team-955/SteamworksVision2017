@@ -4,7 +4,6 @@ class Settings {
 		struct imgproc_settings_peg {
 			int histogram_max = 50000;
 			int histogram_min = 200;
-
 			float histogram_percentile = 75.0;
 
 			int morph_close = 5;
@@ -21,17 +20,31 @@ class Settings {
 			float median_filter_default = 0.0f;
 			int median_filter_stack_size = 5;
 
-			int spline_resolution = 300;
-			float spline_wheel_radius = 2.1f; //Doesn't matter for now... Damnit trevor
-			float spline_max_velocity = 6500;
-			float spline_wheel_seperation = 31.0f / 2.0f;
-			float spline_ctrlpt_distance = 10.0f;
+			cv::Size morph_open_size = cv::Size( 7, 3 );
+			cv::Point morph_open_anchor = cv::Point( 4, 2 );
 
+			cv::Size morph_close_size = cv::Size( 7, 3 );
+			cv::Point morph_close_anchor = cv::Point( 4, 2 );
+		} imgproc_settings_peg_inst;
+
+		struct spline_generator_options {
+			float max_acceleration = 20.5f;
+			float max_velocity = 6500;
+			float wheel_seperation = 31.0f / 2.0f;
+			float control_point_distance = 10.0f;
 			float delta_time = 20.0f; 
 
+			float robot_control_point_a_extension = 1.0f;
+			float robot_control_point_b_extension = 2.0f;
+
+			float peg_control_point_a_extension = 1.0f;
+			float peg_control_point_b_extension = 2.0f;
+
+			int max_recursion_depth = 20;
+
+			cv::Point2f robot_origin = cv::Point2f(0.0f, 0.0f);
 			cv::Point2f end_offset = cv::Point2f(-1.0f, -5.0f);
-			//cv::Point2f end_offset = cv::Point2f(20.0f, -5.0f);
-		} imgproc_settings_peg_inst;
+		} spline_generator_options_inst;
 
 		struct server_options {
 			int server_port = 5806;
