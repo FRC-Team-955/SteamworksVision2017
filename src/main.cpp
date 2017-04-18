@@ -36,7 +36,7 @@ void* finder_thread (void* arg) {
 	std::string tempmode = "";
 	std::string lastmode = "";
 
-	SplineCalc* calc = new SplineCalc(sf->spline_generator_options_inst);
+	SplineCalc* calc = new SplineCalc(&(sf->spline_generator_options_inst));
 
 	Mat encoded_buffer (
 			sf->sensor_options_peg_inst.bgr_height,
@@ -86,20 +86,17 @@ void* finder_thread (void* arg) {
 
 				pugi::xml_node spline_left_node = root_node.append_child("spline_left");	
 				pugi::xml_node spline_right_node = root_node.append_child("spline_right");	
-				for (int i = 0; i < left_tracks.size(); i++) {
-					{
-						pugi::xml_node instance = spline_left_node.append_child(("Point" + std::to_string(i)).c_str());
-						instance.append_attribute("Distance") = left_tracks[i].compounded_distance;
-						instance.append_attribute("Velocity") = left_tracks[i].velocity;
-						instance.append_attribute("DeltaT") = left_tracks[i].time_delta;
+				pugi::xml_node instance;
+					for (int i = 0; i < left_tracks.size(); i++) {
+							instance = spline_left_node.append_child(("Point" + std::to_string(i)).c_str());
+							instance.append_attribute("Distance") = left_tracks[i].compounded_distance;
+							instance.append_attribute("Velocity") = left_tracks[i].velocity;
+							instance.append_attribute("DeltaT") = left_tracks[i].time_delta;
+							instance = spline_right_node.append_child(("Point" + std::to_string(i)).c_str());
+							instance.append_attribute("Distance") = right_tracks[i].compounded_distance;
+							instance.append_attribute("Velocity") = right_tracks[i].velocity;
+							instance.append_attribute("DeltaT") = right_tracks[i].time_delta;
 					}
-					{
-						pugi::xml_node instance = spline_right_node.append_child(("Point" + std::to_string(i)).c_str());
-						instance.append_attribute("Distance") = right_tracks[i].compounded_distance;
-						instance.append_attribute("Velocity") = right_tracks[i].velocity;
-						instance.append_attribute("DeltaT") = right_tracks[i].time_delta;
-					}
-				}
 			}
 			send_doc.save(ss, "", pugi::format_raw);
 #if DEBUG
@@ -140,7 +137,7 @@ void* finder_thread (void* arg) {
 		/*
 		 * This will not work on the tegra because of driver issues, and it also has issues 
 		 * with camera ambiguity (because of the -d arguement doesn't include a serial number)
-		*/
+		 */
 #if !TEGRA
 		if (lastmode != tempmode) {
 			if (tempmode == "Peg") {
@@ -153,7 +150,7 @@ void* finder_thread (void* arg) {
 #endif
 		lastmode = tempmode;
 	}
-	delete[] calc;
+	delete calc;
 	return NULL;
 }
 

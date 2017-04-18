@@ -1,4 +1,6 @@
 //Make sure to keep sane defaults in here
+#ifndef SETTINGS_HPP
+#define SETTINGS_HPP
 class Settings {
 	public:
 		struct imgproc_settings_peg {
@@ -83,3 +85,4 @@ class Settings {
 			int val_slider_upper = 256;
 		} sliders_peg_inst;
 };
+#endif
